@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bun --hot app.tsx",
     "start": "bun app.tsx",
+    "screenshot": "bun screenshot.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

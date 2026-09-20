@@ -118,4 +118,11 @@ public
 .vitest/
 
 # Turbopack
+# Turbopack
+.turbo/
+
+# GPUIX screenshot output + desktop capture scratch files
+screenshots/
+_shot-*.png
+
 .turbo/

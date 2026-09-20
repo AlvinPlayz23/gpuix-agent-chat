@@ -9,18 +9,23 @@
  */
 
 import { useState } from 'react'
+import { motion } from '@gpuix/react'
 import {
   C,
   FONT_SANS,
   HARNESS_ICON,
+  ROW_H,
+  ROW_H_BRANCH,
+  ROW_H_PR,
   ROW_RADIUS,
   SIDEBAR_LIST_GAP,
   SIDEBAR_LIST_PAD_TOP,
   SIDEBAR_WIDTH,
   SPACE_SM,
+  TEXT_MD,
   TEXT_SM,
   TEXT_XS,
-  TITLEBAR_HEIGHT,
+  TRANSITION,
 } from './theme'
 import { Icon, ZeronGlyph } from './icons'
 import type { Session } from './data'
@@ -94,6 +99,7 @@ function StatusCorner({ session }: { session: Session }) {
   )
 }
 
+/** Session row: hover fades in over 150ms, like zeron's session-row.tsx. */
 function SessionRow({
   session,
   selected,
@@ -103,81 +109,152 @@ function SessionRow({
   selected: boolean
   onSelect: () => void
 }) {
+  const [hovered, setHovered] = useState(false)
+  const [archiving, setArchiving] = useState(false)
+  const height = session.branch ? (session.pr != null ? ROW_H_PR : ROW_H_BRANCH) : ROW_H
+  const wash = selected || hovered
+
   return (
     <div
       onClick={onSelect}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => {
+        setHovered(false)
+        setArchiving(false)
+      }}
+      testId={`session-row-${session.id}`}
       style={{
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
+        justifyContent: 'center',
         gap: 1,
+        height,
         borderRadius: ROW_RADIUS,
         paddingLeft: 8,
         paddingRight: 8,
-        paddingTop: 5,
-        paddingBottom: 5,
         cursor: 'pointer',
-        backgroundColor: selected ? C.selected : C.wash0,
-        hover: { backgroundColor: selected ? C.selected : C.hover },
       }}
     >
-      {/* Line 1: space label + status corner */}
-      <div style={{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: SPACE_SM }}>
-        <div style={{ flexGrow: 1, minWidth: 0 }}>
-          <text
-            style={{
-              fontSize: TEXT_XS,
-              lineHeight: 14,
-              color: C.subline,
-              whiteSpace: 'nowrap',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {`${session.project} @ ${session.device}`}
-          </text>
-        </div>
-        <StatusCorner session={session} />
-      </div>
+      {/* Hover/selected wash is its own layer so it can blend (motion), and so
+          the archive swap never shifts content (shell.rs corner). */}
+      <motion.div
+        initial={false}
+        animate={{ opacity: wash ? 1 : 0 }}
+        transition={TRANSITION}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          borderRadius: ROW_RADIUS,
+          backgroundColor: C.selected,
+        }}
+      />
+      <RowLine1 session={session} archiving={archiving} onArchiveStart={() => setArchiving(true)} />
+      <RowLine2 session={session} />
+      {session.branch && <RowLine3 session={session} />}
+    </div>
+  )
+}
 
-      {/* Line 2: zeron glyph · project monogram · title */}
-      <div style={{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: SPACE_SM }}>
-        <ZeronGlyph size={HARNESS_ICON} />
-        <Monogram session={session} />
-        <div style={{ flexGrow: 1, minWidth: 0 }}>
-          <text
-            style={{
-              fontSize: TEXT_SM,
-              lineHeight: 17,
-              fontWeight: selected ? 500 : 400,
-              color: selected ? C.text : C.textMuted,
-              whiteSpace: 'nowrap',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {session.title}
-          </text>
-        </div>
+function RowLine1({
+  session,
+  archiving,
+  onArchiveStart,
+}: {
+  session: Session
+  archiving: boolean
+  onArchiveStart: () => void
+}) {
+  return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: SPACE_SM }}>
+      <div style={{ flexGrow: 1, minWidth: 0 }}>
+        <text
+          style={{
+            fontSize: TEXT_XS,
+            lineHeight: 14,
+            color: C.subline,
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {`${session.project} @ ${session.device}`}
+        </text>
       </div>
+      {/* Corner: status word / time; hovering the row swaps it for Archive. */}
+      <div
+        onMouseEnter={onArchiveStart}
+        style={{ height: 14, flexShrink: 0, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+      >
+        {archiving ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={TRANSITION}
+            style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 4 }}
+          >
+            <Icon name="trash" size={11} color={C.textMuted} />
+            <text style={{ fontSize: 10, fontWeight: 500, color: C.textMuted }}>Archive</text>
+          </motion.div>
+        ) : (
+          <StatusCorner session={session} />
+        )}
+      </div>
+    </div>
+  )
+}
 
-      {/* Line 3: branch + PR badge (structural — omitted when neither exists) */}
-      {session.branch && (
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 1 }}>
-          <Icon name="gitBranch" size={11} color={C.subline} />
-          <div style={{ flexGrow: 1, minWidth: 0 }}>
-            <text
-              style={{
-                fontSize: TEXT_XS,
-                lineHeight: 14,
-                color: C.subline,
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              {session.branch}
-            </text>
-          </div>
-          {session.pr != null && <PullRequestBadge number={session.pr} />}
-        </div>
-      )}
+function RowLine2({ session }: { session: Session }) {
+  return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: SPACE_SM }}>
+      <ZeronGlyph size={HARNESS_ICON} />
+      <Monogram session={session} />
+      <div style={{ flexGrow: 1, minWidth: 0 }}>
+        <text
+          style={{
+            fontSize: TEXT_SM,
+            lineHeight: 17,
+            color: C.text,
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {session.title}
+        </text>
+      </div>
+    </div>
+  )
+}
+
+function RowLine3({ session }: { session: Session }) {
+  return (
+    <div
+      style={{
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingLeft: 1,
+      }}
+    >
+      <Icon name="gitBranch" size={11} color={C.subline} />
+      <div style={{ flexGrow: 1, minWidth: 0 }}>
+        <text
+          style={{
+            fontSize: TEXT_XS,
+            lineHeight: 14,
+            color: C.subline,
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {session.branch}
+        </text>
+      </div>
+      {session.pr != null && <PullRequestBadge number={session.pr} />}
     </div>
   )
 }
@@ -186,6 +263,7 @@ function AccordionHeader({ label, onToggle }: { label: string; onToggle: () => v
   return (
     <div
       onClick={onToggle}
+      testId={`accordion-${label.toLowerCase()}`}
       style={{
         display: 'flex',
         flexDirection: 'row',
@@ -226,11 +304,18 @@ export function Sidebar({
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
-        paddingTop: TITLEBAR_HEIGHT,
       }}
     >
       {/* Spaces dropdown ("All projects") */}
-      <div style={{ paddingLeft: 8, paddingRight: 8, paddingBottom: 4 }}>
+      <div
+        style={{
+          paddingLeft: 8,
+          paddingRight: 8,
+          paddingBottom: 4,
+          borderBottomWidth: 1,
+          borderColor: '#ffffff0f',
+        }}
+      >
         <div
           style={{
             display: 'flex',
@@ -293,16 +378,16 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Footer: profile ("Local only") */}
+      {/* Footer: profile row — two lines, avatar on the left (appshots fixture). */}
       <div style={{ padding: 8 }}>
         <div
           style={{
             display: 'flex',
             flexDirection: 'row',
             alignItems: 'center',
-            gap: 8,
-            height: 36,
-            paddingLeft: 4,
+            gap: 10,
+            height: 44,
+            paddingLeft: 6,
             paddingRight: 8,
             borderRadius: 8,
             cursor: 'pointer',
@@ -311,9 +396,9 @@ export function Sidebar({
         >
           <div
             style={{
-              width: 22,
-              height: 22,
-              borderRadius: 11,
+              width: 32,
+              height: 32,
+              borderRadius: 16,
               backgroundColor: C.raised,
               display: 'flex',
               alignItems: 'center',
@@ -321,9 +406,14 @@ export function Sidebar({
               flexShrink: 0,
             }}
           >
-            <text style={{ fontSize: 11, fontWeight: 500, color: C.text }}>L</text>
+            <text style={{ fontSize: 13, fontWeight: 500, color: C.text }}>D</text>
           </div>
-          <text style={{ fontSize: TEXT_SM, color: C.textMuted }}>Local only</text>
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <text style={{ fontSize: TEXT_MD, color: C.text }}>Development</text>
+            <text style={{ fontSize: 12, color: C.textMuted }}>Local development runtime</text>
+          </div>
+          <div style={{ flexGrow: 1 }} />
+          <Icon name="settings" size={14} color={C.textFaint} />
         </div>
       </div>
     </div>

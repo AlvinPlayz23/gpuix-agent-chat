@@ -138,9 +138,22 @@ export const SESSIONS: Session[] = [
   },
 ]
 
-/** The transcript shown for the selected session (native <markdown>). */
-export const TRANSCRIPT = `
-## Workspace scaffold
+/** A transcript row. Mirrors the block-granularity rows of transcript.rs. */
+export type Turn =
+  | { role: 'user'; text: string; at?: string; attachments?: boolean }
+  | { role: 'assistant'; text: string; at?: string }
+  | { role: 'commands'; text: string }
+
+export const TURNS: Turn[] = [
+  {
+    role: 'user',
+    text: 'Review the workspace design',
+    at: 'Sep 6, 5:20 PM',
+  },
+  { role: 'commands', text: 'Ran 8 commands · edited 1 file · read 5 files' },
+  {
+    role: 'assistant',
+    text: `## Workspace scaffold
 
 Set up the Fieldnotes workspace with the sidebar layout, session accordions, and the composer dock.
 
@@ -167,4 +180,19 @@ fn sidebar_row_height(compact: bool, show_label: bool, branch: bool, pr: bool) -
 - Sessions live in a collapsible accordion
 - Hover swaps the corner for **Archive**
 - The rail fades in below 48rem
-`
+`,
+    at: 'Sep 6, 5:22 PM',
+  },
+  {
+    role: 'user',
+    text: 'Compare these layouts and suggest a clearer hierarchy.',
+    attachments: true,
+    at: 'Sep 6, 5:24 PM',
+  },
+  {
+    role: 'assistant',
+    text: "The three Appshots show a consistent visual style. I'll compare the spacing and reading order, then check how the layout adapts to smaller screens.",
+    at: 'Sep 6, 5:24 PM',
+  },
+]
+

@@ -38,6 +38,7 @@ export const C = {
   input: '#343438b8', // raised @ 72%
 
   // Sidebar-specific (shell.rs)
+  bubble: '#26262a', // right-aligned user turn fill (app-screenshot.jpg)
   subline: '#a9a9ae80', // text_muted.opacity(0.5) — space/branch lines
   harnessTint: '#a9a9aecc', // harness icon = subline.opacity(0.8) ≈ muted @ 80%
 
@@ -72,7 +73,24 @@ export const ROW_RADIUS = 10
 // typography.rs ui_rems(): sizes in px at the default root
 export const TEXT_XS = 11 // space label, branch, corner status/time
 export const TEXT_SM = 13 // row title, UI body
-export const TEXT_MD = 14 // composer, transcript body
+export const TEXT_MD = 14 // UI controls, chips
+export const TEXT_BODY = 15 // transcript + composer body
 export const TEXT_XL = 16 // content header title
+
+// transcript.rs
+export const USER_LINE_HEIGHT = 22 // the user bubble's line box
+export const USER_COLLAPSED_LINES = 5
+export const ATT_THUMB_W = 112
+export const ATT_THUMB_H = 80
+
+// shell.rs chat_row_height(shows_branch, shows_pull_request)
+export const ROW_H = 45 // label + title, no metadata line
+export const ROW_H_BRANCH = 47 + 14 // 61
+export const ROW_H_PR = 47 + 16 // 63
+export const ROW_H_COMPACT = 29
+
+// motion.rs / session-row.tsx: hover washes blend over 150ms
+export const TRANSITION = { duration: 0.15, ease: 'easeOut' as const }
+export const POPOVER_TRANSITION = { duration: 0.12, ease: 'easeOut' as const }
 
 export const FONT_SANS = typeof window === 'undefined' ? 'Helvetica' : 'IBM Plex Sans'

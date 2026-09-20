@@ -17,6 +17,14 @@ import iconFolder from '../assets/icons/folder.svg' with { type: 'text' }
 import iconSearch from '../assets/icons/search.svg' with { type: 'text' }
 import iconSettings from '../assets/icons/settings.svg' with { type: 'text' }
 import iconEllipsis from '../assets/icons/ellipsis.svg' with { type: 'text' }
+import iconCopy from '../assets/icons/copy.svg' with { type: 'text' }
+import iconPencil from '../assets/icons/pencil.svg' with { type: 'text' }
+import iconTrash from '../assets/icons/trash.svg' with { type: 'text' }
+
+const iconChevronRight = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="m9 18 6-6-6-6"/>
+</svg>`
 
 const iconPaperclip = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -39,6 +47,10 @@ const ICONS = {
   settings: iconSettings,
   ellipsis: iconEllipsis,
   paperclip: iconPaperclip,
+  copy: iconCopy,
+  pencil: iconPencil,
+  trash: iconTrash,
+  chevronRight: iconChevronRight,
 } as const
 
 export type IconName = keyof typeof ICONS
@@ -59,7 +71,7 @@ export function Icon({ name, size = 14, color }: { name: IconName; size?: number
 export function ZeronGlyph({ size = 13, color = '#e2795b' }: { size?: number; color?: string }) {
   const s = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-  <g stroke="currentColor" stroke-width="2.6" stroke-linecap="round">
+  <g stroke="currentColor" stroke-width="2.1" stroke-linecap="round">
     <line x1="12" y1="2.5" x2="12" y2="21.5"/>
     <line x1="2.5" y1="12" x2="21.5" y2="12"/>
     <line x1="5.3" y1="5.3" x2="18.7" y2="18.7"/>
