@@ -1,0 +1,158 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@gpuix/native':
+        specifier: 0.9.0
+        version: 0.9.0
+      '@gpuix/react':
+        specifier: 0.9.0
+        version: 0.9.0(react@19.3.0)
+      react:
+        specifier: ^19.2.4
+        version: 19.3.0
+    devDependencies:
+      '@types/bun':
+        specifier: ^1.2.0
+        version: 1.4.2
+      '@types/react':
+        specifier: ^19.2.0
+        version: 19.3.0
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+packages:
+
+  '@gpuix/native-darwin-arm64@0.9.0':
+    resolution: {integrity: sha512-lZEVM4lCKSfWo7B1pSNsupVzmgxJtXLsPWPCTDcm7GV0N7PgDR/kxhiISn26ma/f28araFVxC+VSkvjEZyNnbQ==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@gpuix/native-linux-x64-gnu@0.9.0':
+    resolution: {integrity: sha512-U0epiu0hMyU6ocJxpySCxw7Nwkbzm6v4agnrG/5QV8bhOMmGbg2n4SBMWsnvdAE4qkFD7KE9NB99cwe4qARzHw==}
+    cpu: [x64]
+    os: [linux]
+    libc: [glibc]
+
+  '@gpuix/native-win32-x64-msvc@0.9.0':
+    resolution: {integrity: sha512-vOCoeoNZ4OVbo037VOQbvX9F9z8NoH6Q+N2g1BDOKZvt8YidC2KCQHAMEwRZ8Hh7HjCVEkegPFOu0HB1IE2Y7g==}
+    cpu: [x64]
+    os: [win32]
+
+  '@gpuix/native@0.9.0':
+    resolution: {integrity: sha512-owb6ZgeuLSmWF7LTQMDpVuxPxz8ocykrLzYrv7sJlETOzQTv1sGJfv6V1f9XOI9tBMYlf5Fx4YwPjsNyUVcV3w==}
+
+  '@gpuix/react@0.9.0':
+    resolution: {integrity: sha512-JzpVJDoY9a48K9PRBkWPuaplp8hnWX9u/zCdfzXEDfCfOhz7ft8cFAUuu9l69bz2r8MICW6DH0TvsKRUhQ0sWw==}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
+
+  '@types/bun@1.4.2':
+    resolution: {integrity: sha512-GimotNn7+ZV0uVArItBbriZsR1oNf0+WTzPkdcFrzShI7k2norL0uzEaJT8T33dWr7O/c9ZDuAFQrctKCi72oQ==}
+
+  '@types/node@26.6.2':
+    resolution: {integrity: sha512-X1P21scMv4zGKLYqjdGjaKa7COa0RKVYYZZN/NfvLQ1JegxFhdhpZG/Lyn8AXx6CDUavKAd11v6BvfpkDByK8g==}
+
+  '@types/react@19.3.0':
+    resolution: {integrity: sha512-N0rFCuH9YoxG9/m61l9MfpJKfmLOVU0em7ipIz6TRgSSkvReLB9vL85GB+yr8Bs5leqpvg96JSwF4ZS1s4viQg==}
+
+  bun-types@1.4.2:
+    resolution: {integrity: sha512-bxV1FgK7yBIzjRe5zBozIM4Bem11ZJcCXSrjWRG3YWLt8yFDePu4cLjpebO8OvPeIE9trbyPF4fuj3Cia4Fj3w==}
+
+  csstype@3.2.3:
+    resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  eventsource-parser@4.1.1:
+    resolution: {integrity: sha512-zaWNqeSLeyzEAAt2Q6aDBRDRk/VnPmsKqvToyGvv6aahvLv71A4Jw7jG93Hckf11zXurbqgsffvpSgKPoeU1Qw==}
+    engines: {node: '>=22.12'}
+
+  react-reconciler@0.31.0:
+    resolution: {integrity: sha512-7Ob7Z+URmesIsIVRjnLoDGwBEG/tVitidU0nMsqX/eeJaLY89RISO/10ERe0MqmzuKUUB1rmY+h1itMbUHg9BQ==}
+    engines: {node: '>=0.10.0'}
+    peerDependencies:
+      react: ^19.0.0
+
+  react@19.3.0:
+    resolution: {integrity: sha512-E8LUcbtBWt20bbl2YoHfx4ZDBdxVTfOKtCZn9cDSJ4l6/nuoApcpIBcj47t2wZoVX8g2ZHuMHbiShgCR1T5Sog==}
+    engines: {node: '>=0.10.0'}
+
+  scheduler@0.25.0:
+    resolution: {integrity: sha512-xFVuu11jh+xcO7JOAGJNOXld8/TcEHK/4CituBUeUb5hqxJLj9YuemAEuvm9gQ/+pgXYfbQuqAkiYu+u7YEsNA==}
+
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  undici-types@8.9.0:
+    resolution: {integrity: sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg==}
+
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
+
+snapshots:
+
+  '@gpuix/native-darwin-arm64@0.9.0':
+    optional: true
+
+  '@gpuix/native-linux-x64-gnu@0.9.0':
+    optional: true
+
+  '@gpuix/native-win32-x64-msvc@0.9.0':
+    optional: true
+
+  '@gpuix/native@0.9.0':
+    optionalDependencies:
+      '@gpuix/native-darwin-arm64': 0.9.0
+      '@gpuix/native-linux-x64-gnu': 0.9.0
+      '@gpuix/native-win32-x64-msvc': 0.9.0
+
+  '@gpuix/react@0.9.0(react@19.3.0)':
+    dependencies:
+      '@gpuix/native': 0.9.0
+      eventsource-parser: 4.1.1
+      react: 19.3.0
+      react-reconciler: 0.31.0(react@19.3.0)
+      zod: 4.6.5
+
+  '@types/bun@1.4.2':
+    dependencies:
+      bun-types: 1.4.2
+
+  '@types/node@26.6.2':
+    dependencies:
+      undici-types: 8.9.0
+
+  '@types/react@19.3.0':
+    dependencies:
+      csstype: 3.2.3
+
+  bun-types@1.4.2:
+    dependencies:
+      '@types/node': 26.6.2
+
+  csstype@3.2.3: {}
+
+  eventsource-parser@4.1.1: {}
+
+  react-reconciler@0.31.0(react@19.3.0):
+    dependencies:
+      react: 19.3.0
+      scheduler: 0.25.0
+
+  react@19.3.0: {}
+
+  scheduler@0.25.0: {}
+
+  typescript@5.9.3: {}
+
+  undici-types@8.9.0: {}
+
+  zod@4.6.5: {}
