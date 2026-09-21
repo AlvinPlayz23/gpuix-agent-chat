@@ -43,11 +43,27 @@ the PNG — the same frames on every run, with no desktop compositing involved.
 | --- | --- | --- |
 | `src/theme.ts` | `crates/theme/src/builtins.rs` (`zeron_dark`) + `crates/ui/src/theme.rs` | Exact seeds; derived surface tokens (`hover` = white 11%, `border` = white 10%, `input` = `raised` @72%) |
 | `src/sidebar.tsx` | `crates/ui/src/shell.rs` (`render_chat_row`, sidebar constants) | Row slot 61px + 2px gap, list pad-top 4, harness icon 13, title gap 8 |
-| `src/composer.tsx` | `crates/ui/src/composer_dock.rs` | 48px pill, paperclip left, model chip + send button right |
-| `app.tsx` | `crates/ui/src/shell.rs` (`render_sidebar`, titlebar) | 38px titlebar, 4px top pad, sidebar on the shell, content card with its own border |
+| `src/composer.tsx` | `crates/ui/src/composer.rs` + `composer_dock.rs` | 48px pill, paperclip left, model chip + send right; `hero` new-thread card with floating target selectors; footer workspace chip + context meter |
+| `app.tsx` | `crates/ui/src/shell.rs` (`render_sidebar`, titlebar, new-thread hero) | 38px titlebar, 4px top pad, sidebar on the shell, content card with its own border; hero→dock composer glide |
 | `src/icons.tsx` | `crates/ui/src/icons.rs` | Stroke icons from the GPUIX examples; the Zeron asterisk glyph is inline SVG |
 
 Numbers drive layout, colors are paint — the same rule the Zeron `theme.rs` states.
+
+### Startup → session (hero → dock)
+
+The app opens on the **new-thread canvas**: a tall hero composer centered on the
+blank transcript, with floating device + workspace selectors above it and no
+footer. Sending the first prompt starts a session and the composer **glides**
+down into the compact 48px dock — the selectors' row dissolves, the session
+footer (workspace chip + context meter) grows in, and the transcript fades in.
+
+This mirrors comet's `composer.rs`: the blank canvas is always expanded, the
+route chrome ramps via `route_chrome_opacities`, and the move runs on
+`NEW_THREAD_TRANSITION` (420ms ease-out-quint). GPUIX `motion` only animates
+`width` / `height` / `opacity` / offsets / `borderRadius`, so the glide is
+driven by a collapsing spacer height, a composer width morph (760 → 720), and
+the selector/footer height+opacity ramps — all in `app.tsx`. The `+` button
+returns to the blank hero canvas.
 
 ### Session row anatomy (detailed mode)
 

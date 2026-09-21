@@ -8,8 +8,9 @@
 
 import { useState } from 'react'
 import { motion } from '@gpuix/react'
-import { C, POPOVER_TRANSITION, TEXT_BODY, TEXT_SM, TEXT_XS } from './theme'
+import { C, POPOVER_TRANSITION, TEXT_BODY, TEXT_MD, TEXT_SM, TEXT_XS } from './theme'
 import { Icon } from './icons'
+import { Menu, PickerChip } from './menu'
 import { ModelPicker, TraitsChip } from './model-picker'
 import type { Harness, Model, ReasoningLevel } from './catalog'
 
@@ -40,6 +41,7 @@ export function Composer({
   onLevel,
   workspace,
   onSend,
+  hero = false,
 }: {
   harness: Harness
   model: Model
@@ -49,6 +51,8 @@ export function Composer({
   onLevel: (level: ReasoningLevel | null) => void
   workspace: string
   onSend: (text: string) => void
+  /** New-thread (blank canvas) layout: a tall card. Established sessions dock compact. */
+  hero?: boolean
 }) {
   const [draft, setDraft] = useState('')
   const [focused, setFocused] = useState(false)
@@ -62,6 +66,91 @@ export function Composer({
     if (!draft.trim()) return
     onSend(draft.trim())
     setDraft('')
+  }
+
+  const sendButton = (size: number) => (
+    <div
+      onClick={send}
+      testId="send"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: draft.trim() ? C.text : C.raised,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        flexShrink: 0,
+        hover: { backgroundColor: '#ffffff' },
+      }}
+    >
+      <Icon name="arrowUp" size={16} color={draft.trim() ? C.background : C.textMuted} />
+    </div>
+  )
+
+  // Hero (new-thread) card: placeholder row on top, controls row below. The
+  // blank canvas is always expanded (composer.rs: new chats render expanded).
+  // Geometry mirrors COMPOSER_MIN_HEIGHT = 124: a 76px textarea box (the empty
+  // floor) + a 46px actions row + the 2px hairline.
+  if (hero) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+        <div
+          testId="composer"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            paddingTop: 16,
+            paddingBottom: 10,
+            paddingLeft: 18,
+            paddingRight: 12,
+            borderRadius: 26,
+            backgroundColor: C.input,
+            borderWidth: 1,
+            borderColor: focused ? C.borderStrong : C.border,
+          }}
+        >
+          <textarea
+            value={draft}
+            placeholder="Do anything…"
+            minRows={1}
+            maxRows={4}
+            autoFocus
+            onChange={(e) => setDraft(e.value ?? '')}
+            onSubmit={send}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            style={{ width: '100%', minWidth: 0, height: 52, fontSize: TEXT_BODY, lineHeight: 22, color: C.text }}
+            theme={{ caret: C.accent }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              height: 46,
+              marginTop: 0,
+            }}
+          >
+            <Icon name="paperclip" size={15} color={C.textFaint} />
+            <ModelPicker
+              harness={harness}
+              model={model}
+              level={level}
+              onHarness={onHarness}
+              onModel={onModel}
+              onLevel={onLevel}
+            />
+            <TraitsChip model={model} level={level} />
+            <div style={{ flexGrow: 1 }} />
+            {sendButton(34)}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -104,24 +193,7 @@ export function Composer({
           onLevel={onLevel}
         />
         <TraitsChip model={model} level={level} />
-        <div
-          onClick={send}
-          testId="send"
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 17,
-            backgroundColor: draft.trim() ? C.text : C.raised,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            flexShrink: 0,
-            hover: { backgroundColor: '#ffffff' },
-          }}
-        >
-          <Icon name="arrowUp" size={16} color={draft.trim() ? C.background : C.textMuted} />
-        </div>
+        {sendButton(34)}
       </div>
 
       <ComposerFooter
@@ -137,6 +209,52 @@ export function Composer({
   )
 }
 
+/**
+ * The new-thread floating target selectors (composer.rs
+ * `render_new_thread_target_selectors`): a device chip and a workspace/folder
+ * chip right-aligned above the hero card. These dissolve away (their row height
+ * scales with the new-thread chrome) as the composer docks into a session.
+ */
+export function HeroTargetSelectors({ device, workspace }: { device: string; workspace: string }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        gap: 4,
+        width: '100%',
+      }}
+    >
+      <Menu
+        value={device}
+        onSelect={() => {}}
+        side="bottom"
+        width={224}
+        testId="picker-device"
+        trigger={<PickerChip icon="monitor" label={device} />}
+        options={[
+          { value: device, label: device, icon: 'monitor', hint: 'online' },
+          { value: 'build', label: 'Build server', icon: 'monitor', hint: 'offline' },
+        ]}
+      />
+      <Menu
+        value={workspace}
+        onSelect={() => {}}
+        side="bottom"
+        width={280}
+        testId="picker-project"
+        trigger={<PickerChip icon="folder" label={workspace} />}
+        options={[
+          { value: workspace, label: workspace, icon: 'folder' },
+          { value: 'api', label: 'API server/main', icon: 'folder' },
+          { value: 'new', label: 'New project…', icon: 'plus' },
+        ]}
+      />
+    </div>
+  )
+}
 
 function ComposerFooter({
   workspace,

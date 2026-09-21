@@ -5,9 +5,20 @@
  * GPUIX's native <diff>, which flows inside this pane's own scroller.
  */
 
+import { useState } from 'react'
 import { motion } from '@gpuix/react'
 import { C, POPOVER_TRANSITION, TEXT_SM, TEXT_XS } from './theme'
-import { Icon } from './icons'
+import { Icon, type IconName } from './icons'
+import { Menu } from './menu'
+
+type Surface = 'changes' | 'files' | 'browser' | 'terminal'
+
+const SURFACES: { value: Surface; label: string; icon: IconName }[] = [
+  { value: 'changes', label: 'Branch changes', icon: 'gitBranch' },
+  { value: 'files', label: 'Files', icon: 'folder' },
+  { value: 'browser', label: 'Browser', icon: 'globe' },
+  { value: 'terminal', label: 'Terminal', icon: 'terminal' },
+]
 
 const PATCH = `diff --git a/crates/ui/src/composer.rs b/crates/ui/src/composer.rs
 @@ -118,7 +118,9 @@ pub fn composer_dock(...) {
@@ -32,7 +43,9 @@ diff --git a/crates/ui/src/shell.rs b/crates/ui/src/shell.rs
 `
 
 export function ChangesPane({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [surface, setSurface] = useState<Surface>('changes')
   if (!open) return null
+  const active = SURFACES.find((s) => s.value === surface) ?? SURFACES[0]
   return (
     <motion.div
       initial={{ opacity: 0, width: 0 }}
@@ -51,15 +64,49 @@ export function ChangesPane({ open, onClose }: { open: boolean; onClose: () => v
           borderColor: C.border,
         }}
       >
-        <ChangesHeader onClose={onClose} />
-        <ChangesSummary />
-        <ChangesList />
+        <ChangesHeader active={active} onSurface={setSurface} onClose={onClose} />
+        {surface === 'changes' && (
+          <>
+            <ChangesSummary />
+            <ChangesList />
+          </>
+        )}
+        {surface === 'files' && <PlaceholderSurface label="Files" detail="Workspace file tree and previews" />}
+        {surface === 'browser' && <PlaceholderSurface label="Browser" detail="In-app web surface" />}
+        {surface === 'terminal' && <PlaceholderSurface label="Terminal" detail="Session shell" />}
       </div>
     </motion.div>
   )
 }
 
-function ChangesHeader({ onClose }: { onClose: () => void }) {
+function PlaceholderSurface({ label, detail }: { label: string; detail: string }) {
+  return (
+    <div
+      style={{
+        flexGrow: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+      }}
+    >
+      <text style={{ fontSize: TEXT_SM, fontWeight: 500, color: C.text }}>{label}</text>
+      <text style={{ fontSize: TEXT_XS, color: C.textFaint }}>{detail}</text>
+    </div>
+  )
+}
+
+function ChangesHeader({
+  active,
+  onSurface,
+  onClose,
+}: {
+  active: { value: Surface; label: string; icon: IconName }
+  onSurface: (surface: Surface) => void
+  onClose: () => void
+}) {
   return (
     <div
       style={{
@@ -73,27 +120,41 @@ function ChangesHeader({ onClose }: { onClose: () => void }) {
         paddingRight: 10,
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 6,
-          height: 26,
-          paddingLeft: 8,
-          paddingRight: 6,
-          borderRadius: 7,
-          backgroundColor: C.wash0,
-          borderWidth: 1,
-          borderColor: C.border,
-          cursor: 'pointer',
-          flexShrink: 0,
-          hover: { backgroundColor: C.hover },
-        }}
-      >
-        <text style={{ fontSize: 12, color: C.text, whiteSpace: 'nowrap' }}>Branch changes</text>
-        <Icon name="chevronDown" size={11} color={C.textFaint} />
-      </div>
+      {/* Surface picker (shell.rs right-pane tab strip): Changes / Files /
+          Browser / Terminal. */}
+      <Menu
+        value={active.value}
+        onSelect={(value) => onSurface(value as Surface)}
+        side="bottom"
+        sideOffset={6}
+        width={200}
+        testId="surface-picker"
+        trigger={
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              height: 26,
+              paddingLeft: 8,
+              paddingRight: 6,
+              borderRadius: 7,
+              backgroundColor: C.wash0,
+              borderWidth: 1,
+              borderColor: C.border,
+              cursor: 'pointer',
+              flexShrink: 0,
+              hover: { backgroundColor: C.hover },
+            }}
+          >
+            <Icon name={active.icon} size={12} color={C.textMuted} />
+            <text style={{ fontSize: 12, color: C.text, whiteSpace: 'nowrap' }}>{active.label}</text>
+            <Icon name="chevronDown" size={11} color={C.textFaint} />
+          </div>
+        }
+        options={SURFACES.map((surface) => ({ value: surface.value, label: surface.label, icon: surface.icon }))}
+      />
       <div
         style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 6, height: 26, flexShrink: 1, minWidth: 0 }}
       >

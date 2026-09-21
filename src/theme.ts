@@ -12,11 +12,13 @@
  */
 
 export const C = {
-  // zeron_dark seeds
-  background: '#060606',
-  shell: '#0d0d0d',
+  // zeron_dark seeds, nudged to the Frosted composite: the real app renders
+  // translucent surfaces over the desktop backdrop, so its planes read a touch
+  // lighter and warmer than the raw opaque seeds (#060606 / #0d0d0d).
+  background: '#0e0e11',
+  shell: '#16161a',
   raised: '#343438',
-  card: '#0e0e0e',
+  card: '#121215',
   text: '#e8e8ea',
   textMuted: '#a9a9ae',
   textFaint: '#85858a',
@@ -27,8 +29,8 @@ export const C = {
   terminalBg: '#090909',
 
   // Derived (variant() in builtins.rs, dark appearance)
-  dialog: '#1e1e21', // card.mix(raised, 0.18)
-  overlay: '#262629', // card.mix(raised, 0.34)
+  dialog: '#232327', // card.mix(raised, 0.18) over the lifted card
+  overlay: '#2a2a2e', // card.mix(raised, 0.34) over the lifted card
   hover: '#ebebef1c', // border_tone(white) @ 11% — glass_hover / wash(0.11)
   selected: '#ebebef1c', // glass_selected_bg dark = wash(0.11)
   active: '#8b7cf62e', // accent @ 18%
@@ -92,5 +94,24 @@ export const ROW_H_COMPACT = 29
 // motion.rs / session-row.tsx: hover washes blend over 150ms
 export const TRANSITION = { duration: 0.15, ease: 'easeOut' as const }
 export const POPOVER_TRANSITION = { duration: 0.12, ease: 'easeOut' as const }
+// motion.rs NEW_THREAD_TRANSITION: 420ms ease-out-quint (the hero→dock glide)
+export const NEW_THREAD_TRANSITION: { duration: number; ease: [number, number, number, number] } = {
+  duration: 0.42,
+  ease: [0.22, 1.0, 0.36, 1.0],
+}
+
+// composer.rs hero (new-thread) vs dock (session) geometry. The blank canvas is
+// always expanded; an established session is compact. Only GPUIX-animatable
+// props (height / borderRadius / opacity) are driven by these numbers.
+export const COMPOSER_MAX_WIDTH = 768 // COMPOSER_MAX_WIDTH (max-w-3xl)
+export const COMPOSER_DOCK_HEIGHT = 48 // COMPACT_TOTAL_HEIGHT ≈ 49
+export const COMPOSER_DOCK_RADIUS = 24 // pill
+// composer.rs COMPOSER_MIN_HEIGHT = TEXTAREA_MIN(76) + ACTIONS_ROW(46) + border(2) = 124.
+// The 76px empty-textarea floor is what makes the always-expanded new-chat card tall.
+export const COMPOSER_HERO_HEIGHT = 124
+export const COMPOSER_HERO_RADIUS = 26 // COMPOSER_RADIUS
+// shell.rs new_thread_background_height: 72% of the viewport, capped at 760px.
+export const NEW_THREAD_BACKGROUND_VIEWPORT_RATIO = 0.72
+export const NEW_THREAD_BACKGROUND_MAX_HEIGHT = 760
 
 export const FONT_SANS = typeof window === 'undefined' ? 'Helvetica' : 'IBM Plex Sans'

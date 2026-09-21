@@ -14,6 +14,7 @@ import {
   C,
   FONT_SANS,
   HARNESS_ICON,
+  POPOVER_TRANSITION,
   ROW_H,
   ROW_H_BRANCH,
   ROW_H_PR,
@@ -27,7 +28,8 @@ import {
   TEXT_XS,
   TRANSITION,
 } from './theme'
-import { Icon, ZeronGlyph } from './icons'
+import { Icon, ZeronGlyph, type IconName } from './icons'
+import { Menu } from './menu'
 import type { Session } from './data'
 
 function withAlpha(hex: string, alpha: number): string {
@@ -282,19 +284,46 @@ function AccordionHeader({ label, onToggle }: { label: string; onToggle: () => v
     </div>
   )
 }
+/** Accordion body: the rows clip inside a container whose height tweens open
+ *  and closed (GPUIX motion — height is numeric, so the fold glides). */
+function AccordionBody({
+  open,
+  rows,
+  children,
+}: {
+  open: boolean
+  rows: number
+  children: React.ReactNode
+}) {
+  const height = rows * (ROW_H_PR + SIDEBAR_LIST_GAP)
+  return (
+    <motion.div
+      initial={false}
+      animate={{ height: open ? height : 0, opacity: open ? 1 : 0 }}
+      transition={TRANSITION}
+      style={{ overflow: 'hidden', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: SIDEBAR_LIST_GAP }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
 export function Sidebar({
   pinned,
   sessions,
   selectedId,
   onSelect,
+  onOpenSettings,
 }: {
   pinned: Session[]
   sessions: Session[]
   selectedId: string
   onSelect: (id: string) => void
+  onOpenSettings?: () => void
 }) {
   const [pinnedOpen, setPinnedOpen] = useState(true)
   const [sessionsOpen, setSessionsOpen] = useState(true)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <div
@@ -323,20 +352,62 @@ export function Sidebar({
             alignItems: 'center',
             gap: 6,
             height: 30,
-            paddingLeft: 8,
-            paddingRight: 6,
-            borderRadius: 8,
-            cursor: 'pointer',
-            hover: { backgroundColor: C.hover },
           }}
         >
-          <Icon name="folder" size={13} color={C.textMuted} />
-          <text style={{ fontSize: TEXT_SM, fontWeight: 500, color: C.text, fontFamily: FONT_SANS }}>
-            All projects
-          </text>
-          <div style={{ flexGrow: 1 }} />
-          <Icon name="chevronDown" size={11} color={C.textFaint} />
-          <Icon name="listFilter" size={12} color={C.textFaint} />
+          <Menu
+            value="all"
+            onSelect={() => {}}
+            side="bottom"
+            sideOffset={6}
+            width={SIDEBAR_WIDTH - 16}
+            testId="spaces-filter"
+            trigger={
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                  flexGrow: 1,
+                  minWidth: 0,
+                  height: 30,
+                  paddingLeft: 8,
+                  paddingRight: 6,
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  hover: { backgroundColor: C.hover },
+                }}
+              >
+                <Icon name="folder" size={13} color={C.textMuted} />
+                <text style={{ fontSize: TEXT_SM, fontWeight: 500, color: C.text, fontFamily: FONT_SANS }}>
+                  All projects
+                </text>
+                <div style={{ flexGrow: 1 }} />
+                <Icon name="chevronDown" size={11} color={C.textFaint} />
+              </div>
+            }
+            options={[
+              { value: 'all', label: 'All projects', icon: 'folder' },
+              { value: 'fieldnotes', label: 'fieldnotes', icon: 'folder', hint: 'This device' },
+              { value: 'api', label: 'API server', icon: 'folder', hint: 'Build server' },
+              { value: 'new', label: 'New project…', icon: 'plus' },
+            ]}
+          />
+          <div
+            style={{
+              width: 26,
+              height: 26,
+              borderRadius: 6,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              hover: { backgroundColor: C.hover },
+            }}
+          >
+            <Icon name="listFilter" size={12} color={C.textFaint} />
+          </div>
         </div>
       </div>
 
@@ -353,8 +424,8 @@ export function Sidebar({
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: SIDEBAR_LIST_GAP }}>
           <AccordionHeader label="Pinned" onToggle={() => setPinnedOpen((v) => !v)} />
-          {pinnedOpen &&
-            pinned.map((session) => (
+          <AccordionBody open={pinnedOpen} rows={pinned.length}>
+            {pinned.map((session) => (
               <SessionRow
                 key={session.id}
                 session={session}
@@ -362,12 +433,13 @@ export function Sidebar({
                 onSelect={() => onSelect(session.id)}
               />
             ))}
+          </AccordionBody>
 
           <div style={{ height: 6 }} />
 
           <AccordionHeader label="Sessions" onToggle={() => setSessionsOpen((v) => !v)} />
-          {sessionsOpen &&
-            sessions.map((session) => (
+          <AccordionBody open={sessionsOpen} rows={sessions.length}>
+            {sessions.map((session) => (
               <SessionRow
                 key={session.id}
                 session={session}
@@ -375,12 +447,59 @@ export function Sidebar({
                 onSelect={() => onSelect(session.id)}
               />
             ))}
+          </AccordionBody>
         </div>
       </div>
 
-      {/* Footer: profile row — two lines, avatar on the left (appshots fixture). */}
-      <div style={{ padding: 8 }}>
+      {/* Footer: the profile row ("L · Local only") opens the account menu —
+          "Stored on this device" / Enable sync / Settings (command-palette/
+          settings-menu.png). */}
+      <div style={{ padding: 8, position: 'relative' }}>
+        {menuOpen && (
+          <>
+            {/* Click-away backdrop */}
+            <div
+              onClick={() => setMenuOpen(false)}
+              style={{ position: 'absolute', top: -2000, left: -100, right: 0, bottom: 0 }}
+            />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={POPOVER_TRANSITION}
+              style={{
+                position: 'absolute',
+                left: 8,
+                right: 8,
+                bottom: 60,
+                display: 'flex',
+                flexDirection: 'column',
+                backgroundColor: C.overlay,
+                borderWidth: 1,
+                borderColor: C.border,
+                borderRadius: 12,
+                overflow: 'hidden',
+              }}
+            >
+              <text style={{ fontSize: TEXT_XS, color: C.textFaint, paddingLeft: 12, paddingTop: 10, paddingBottom: 6 }}>
+                Stored on this device
+              </text>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1, padding: 4 }}>
+                <ProfileMenuRow icon="globe" label="Enable sync" onClick={() => setMenuOpen(false)} />
+                <ProfileMenuRow
+                  icon="settings"
+                  label="Settings"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    onOpenSettings?.()
+                  }}
+                />
+              </div>
+            </motion.div>
+          </>
+        )}
         <div
+          onClick={() => setMenuOpen((v) => !v)}
+          testId="profile-menu"
           style={{
             display: 'flex',
             flexDirection: 'row',
@@ -391,6 +510,7 @@ export function Sidebar({
             paddingRight: 8,
             borderRadius: 8,
             cursor: 'pointer',
+            backgroundColor: menuOpen ? C.hover : C.wash0,
             hover: { backgroundColor: C.hover },
           }}
         >
@@ -406,16 +526,37 @@ export function Sidebar({
               flexShrink: 0,
             }}
           >
-            <text style={{ fontSize: 13, fontWeight: 500, color: C.text }}>D</text>
+            <text style={{ fontSize: 13, fontWeight: 500, color: C.text }}>L</text>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-            <text style={{ fontSize: TEXT_MD, color: C.text }}>Development</text>
-            <text style={{ fontSize: 12, color: C.textMuted }}>Local development runtime</text>
-          </div>
+          <text style={{ fontSize: TEXT_MD, color: C.text }}>Local only</text>
           <div style={{ flexGrow: 1 }} />
-          <Icon name="settings" size={14} color={C.textFaint} />
+          <Icon name="chevronDown" size={13} color={C.textFaint} />
         </div>
       </div>
+    </div>
+  )
+}
+
+function ProfileMenuRow({ icon, label, onClick }: { icon: IconName; label: string; onClick: () => void }) {
+  return (
+    <div
+      onClick={onClick}
+      testId={`profile-menu-${label.toLowerCase().replace(/\s+/g, '-')}`}
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        height: 32,
+        paddingLeft: 8,
+        paddingRight: 8,
+        borderRadius: 7,
+        cursor: 'pointer',
+        hover: { backgroundColor: C.hover },
+      }}
+    >
+      <Icon name={icon} size={14} color={C.textMuted} />
+      <text style={{ fontSize: TEXT_MD, color: C.text }}>{label}</text>
     </div>
   )
 }

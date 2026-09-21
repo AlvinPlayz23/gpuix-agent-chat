@@ -1,15 +1,28 @@
 import { useState } from 'react'
-import { motion, render } from '@gpuix/react'
-import { C, SIDEBAR_WIDTH, STATUS_STRIP_HEIGHT, TRANSITION } from './src/theme'
+import { motion, render, useWindowSize } from '@gpuix/react'
+import {
+  C,
+  COMPOSER_DOCK_HEIGHT,
+  COMPOSER_HERO_HEIGHT,
+  NEW_THREAD_TRANSITION,
+  SIDEBAR_WIDTH,
+  STATUS_STRIP_HEIGHT,
+  TITLEBAR_HEIGHT,
+  TRANSITION,
+} from './src/theme'
 import { Sidebar } from './src/sidebar'
 import { Titlebar } from './src/titlebar'
-import { Composer } from './src/composer'
+import { Composer, HeroTargetSelectors } from './src/composer'
 import { Transcript } from './src/transcript'
 import { ChangesPane } from './src/changes'
+import { SettingsNav, SettingsView } from './src/settings'
 import { HARNESSES, type Harness, type Model, type ReasoningLevel } from './src/catalog'
 import { PINNED, SESSIONS, TURNS, type Session, type Turn } from './src/data'
 
 const CONTENT_MAX_WIDTH = 720
+// The hero (new-thread) card floats a touch wider than the docked composer,
+// matching the startup screenshot; it narrows as it docks.
+const HERO_MAX_WIDTH = 760
 
 export function App() {
   const [selectedId, setSelectedId] = useState('s7')
@@ -19,11 +32,18 @@ export function App() {
   const [harness, setHarness] = useState<Harness>(HARNESSES[0])
   const [model, setModel] = useState<Model>(HARNESSES[0].models[0])
   const [level, setLevel] = useState<ReasoningLevel | null>('High')
+  // New-thread canvas: a session exists only after the first prompt is sent.
+  // Boot on the hero (startup) screen; sending a prompt docks the composer.
+  const [started, setStarted] = useState(false)
+  // The settings view replaces the sessions sidebar + content card.
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsSection, setSettingsSection] = useState<'devices' | 'agents' | 'accounts' | 'appearance' | 'shortcuts' | 'archived'>('agents')
 
   const selected: Session = [...PINNED, ...SESSIONS].find((s) => s.id === selectedId) ?? SESSIONS[0]
   const workspace = `${selected.project}/${selected.branch.split('/')[1] ?? 'main'}`
 
-  const send = (text: string) =>
+  const send = (text: string) => {
+    setStarted(true)
     setTurns((current) => [
       ...current,
       { role: 'user', text },
@@ -34,6 +54,20 @@ export function App() {
         at: 'Sep 6, 5:22 PM',
       },
     ])
+  }
+
+  // The + button returns to the blank hero canvas.
+  const newSession = () => {
+    setTurns([])
+    setStarted(false)
+  }
+
+  const selectSession = (id: string) => {
+    setSelectedId(id)
+    // Fixture sessions are established threads; restore the demo transcript.
+    setTurns(TURNS)
+    setStarted(true)
+  }
 
   return (
     <div
@@ -52,41 +86,62 @@ export function App() {
         session={selected}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
-        onNewSession={() => setSelectedId('s7')}
+        onNewSession={newSession}
         rightPaneOpen={changesOpen}
         onToggleRightPane={() => setChangesOpen((v) => !v)}
       />
 
       <div style={{ display: 'flex', flexDirection: 'row', flexGrow: 1, minHeight: 0 }}>
-        {/* Sidebar collapse: animate the clipping container, keep the inner
-            sidebar at its fixed width so text never reflows (GPUIX motion). */}
-        <motion.div
-          initial={false}
-          animate={{ width: sidebarOpen ? SIDEBAR_WIDTH : 0 }}
-          transition={TRANSITION}
-          style={{ height: '100%', flexShrink: 0, overflow: 'hidden' }}
-        >
-          <div style={{ width: SIDEBAR_WIDTH, height: '100%' }}>
-            <Sidebar pinned={PINNED} sessions={SESSIONS} selectedId={selectedId} onSelect={setSelectedId} />
-          </div>
-        </motion.div>
+        {settingsOpen ? (
+          <>
+            <SettingsNav
+              section={settingsSection}
+              onSection={setSettingsSection}
+              onBack={() => setSettingsOpen(false)}
+            />
+            <SettingsView section={settingsSection} />
+          </>
+        ) : (
+          <>
+            {/* Sidebar collapse: animate the clipping container, keep the inner
+                sidebar at its fixed width so text never reflows (GPUIX motion). */}
+            <motion.div
+              initial={false}
+              animate={{ width: sidebarOpen ? SIDEBAR_WIDTH : 0 }}
+              transition={TRANSITION}
+              style={{ height: '100%', flexShrink: 0, overflow: 'hidden' }}
+            >
+              <div style={{ width: SIDEBAR_WIDTH, height: '100%' }}>
+                <Sidebar
+                  pinned={PINNED}
+                  sessions={SESSIONS}
+                  selectedId={selectedId}
+                  onSelect={selectSession}
+                  onOpenSettings={() => setSettingsOpen(true)}
+                />
+              </div>
+            </motion.div>
 
-        <ContentCard
-          turns={turns}
-          harness={harness}
-          model={model}
-          level={level}
-          workspace={workspace}
-          onHarness={(next) => {
-            setHarness(next)
-            setModel(next.models[0] ?? model)
-          }}
-          onModel={setModel}
-          onLevel={setLevel}
-          onSend={send}
-        />
+            <ContentCard
+              turns={turns}
+              started={started}
+              harness={harness}
+              model={model}
+              level={level}
+              workspace={workspace}
+              device={selected.device}
+              onHarness={(next) => {
+                setHarness(next)
+                setModel(next.models[0] ?? model)
+              }}
+              onModel={setModel}
+              onLevel={setLevel}
+              onSend={send}
+            />
 
-        <ChangesPane open={changesOpen} onClose={() => setChangesOpen(false)} />
+            <ChangesPane open={changesOpen} onClose={() => setChangesOpen(false)} />
+          </>
+        )}
       </div>
     </div>
   )
@@ -94,30 +149,48 @@ export function App() {
 
 function ContentCard({
   turns,
+  started,
   harness,
   model,
   level,
   workspace,
+  device,
   onHarness,
   onModel,
   onLevel,
   onSend,
 }: {
   turns: Turn[]
+  started: boolean
   harness: Harness
   model: Model
   level: ReasoningLevel | null
   workspace: string
+  device: string
   onHarness: (harness: Harness) => void
   onModel: (model: Model) => void
   onLevel: (level: ReasoningLevel | null) => void
   onSend: (text: string) => void
 }) {
+  const { height: viewportHeight } = useWindowSize()
+  const hero = !started
+  // Heights of the composer block in each state (selectors row + composer).
+  const heroHeight = 32 + COMPOSER_HERO_HEIGHT // selectors (24+8) + hero card
+  const dockHeight = COMPOSER_DOCK_HEIGHT + 6 // pill + footer gap
+  const contentHeight = viewportHeight - TITLEBAR_HEIGHT
+  // Hero: the block's vertical center sits at the canvas middle. Dock: its
+  // bottom rests 16px above the content card's bottom edge.
+  const heroTop = Math.max((contentHeight - heroHeight) / 2, 24)
+  const dockTop = Math.max(contentHeight - dockHeight - 16, 24)
+  // Bottom slot reserved for the docked composer so the transcript clears it.
+  const dockFootprint = dockHeight + 16
+
   return (
     <div
       style={{
         flexGrow: 1,
         minWidth: 0,
+        position: 'relative',
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: C.background,
@@ -125,60 +198,106 @@ function ContentCard({
         borderColor: C.border,
       }}
     >
-      {/* Transcript — the only scroller on this pane (GPUIX: nested scrolling
-          is not supported, so nothing inside a row may scroll). */}
-      <div
-        testId="transcript"
+      {/* Transcript — the only scroller on this pane. Empty until the first
+          prompt; it fades in as the session docks. */}
+      <motion.div
+        initial={false}
+        animate={{ opacity: hero ? 0 : 1 }}
+        transition={NEW_THREAD_TRANSITION}
+        style={{ flexGrow: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+      >
+        <div
+          testId="transcript"
+          style={{
+            flexGrow: 1,
+            minHeight: 0,
+            overflowY: 'scroll',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: CONTENT_MAX_WIDTH,
+              paddingLeft: 24,
+              paddingRight: 24,
+              paddingTop: 24,
+              paddingBottom: 24,
+            }}
+          >
+            <Transcript turns={turns} />
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Composer: one persistent absolutely-positioned surface. Its `top`
+          animates from the centered hero offset down to the docked offset, and
+          its width morphs between the wide hero card and the narrower pill —
+          the hero→dock glide (motion.rs NEW_THREAD_TRANSITION). GPUIX tweens
+          numerics only, so position is driven by `top`, not flex. */}
+      <motion.div
+        initial={false}
+        animate={{ top: hero ? heroTop : dockTop }}
+        transition={NEW_THREAD_TRANSITION}
         style={{
-          flexGrow: 1,
-          minHeight: 0,
-          overflowY: 'scroll',
+          position: 'absolute',
+          left: 0,
+          right: 0,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            maxWidth: CONTENT_MAX_WIDTH,
-            paddingLeft: 24,
-            paddingRight: 24,
-            paddingTop: 24,
-            paddingBottom: 24,
-          }}
-        >
-          <Transcript turns={turns} />
-        </div>
-      </div>
-
-      {/* Reserved status strip (zeron h-6 WorkingIndicator row) */}
-      <div style={{ height: STATUS_STRIP_HEIGHT, flexShrink: 0 }} />
-
-      <div
-        style={{
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'row',
-          justifyContent: 'center',
           paddingLeft: 24,
           paddingRight: 24,
-          paddingBottom: 16,
         }}
       >
-        <div style={{ width: '100%', maxWidth: CONTENT_MAX_WIDTH }}>
-          <Composer
-            harness={harness}
-            model={model}
-            level={level}
-            onHarness={onHarness}
-            onModel={onModel}
-            onLevel={onLevel}
-            workspace={workspace}
-            onSend={onSend}
-          />
+        <div style={{ width: '100%', maxWidth: CONTENT_MAX_WIDTH, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          {/* New-thread floating target selectors: the row dissolves as the
+              session docks (composer.rs new-thread chrome). */}
+          <motion.div
+            initial={false}
+            animate={{ height: hero ? 24 : 0, opacity: hero ? 1 : 0 }}
+            transition={NEW_THREAD_TRANSITION}
+            style={{ width: '100%', maxWidth: HERO_MAX_WIDTH, flexShrink: 0, overflow: 'hidden' }}
+          >
+            <div style={{ paddingBottom: 8 }}>
+              <HeroTargetSelectors device={device} workspace={workspace} />
+            </div>
+          </motion.div>
+
+          {/* One persistent composer surface; `hero` swaps its internal layout
+              between the tall card and the compact pill, while its width
+              morphs between the floating hero and the narrower dock. */}
+          <motion.div
+            initial={false}
+            animate={{ width: hero ? HERO_MAX_WIDTH : CONTENT_MAX_WIDTH }}
+            transition={NEW_THREAD_TRANSITION}
+            style={{ flexShrink: 1, minWidth: 0, maxWidth: '100%' }}
+          >
+            <Composer
+              harness={harness}
+              model={model}
+              level={level}
+              onHarness={onHarness}
+              onModel={onModel}
+              onLevel={onLevel}
+              workspace={workspace}
+              onSend={onSend}
+              hero={hero}
+            />
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
+
+      {/* Dock footprint: reserves the bottom slot so the transcript stops above
+          the composer once docked. Zero-height on the hero canvas. */}
+      <motion.div
+        initial={false}
+        animate={{ height: hero ? 0 : dockFootprint }}
+        transition={NEW_THREAD_TRANSITION}
+        style={{ width: '100%', flexShrink: 0 }}
+      />
     </div>
   )
 }
