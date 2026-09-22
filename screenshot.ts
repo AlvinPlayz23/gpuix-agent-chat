@@ -48,10 +48,11 @@ await app.clock.resume()
 await app.getByTestId('picker-device').click()
 await app.clock.fastForward(200)
 
-// Send a prompt: the hero composer shrinks down to the compact dock.
+// Send a prompt: the hero composer shrinks down to the compact dock. Fill the
+// textarea itself — `composer` is the pill wrapper and can't take keystrokes.
 await app.clock.resume()
-await app.getByTestId('composer').fill('Analyse this folder and give me an overview')
-await app.getByTestId('composer').press('enter')
+await app.getByTestId('composer-input').fill('Analyse this folder and give me an overview')
+await app.getByTestId('composer-input').press('enter')
 // Mid-glide frame (~half the 420ms NEW_THREAD_TRANSITION) proves the composer
 // animates between the two states instead of snapping.
 await app.clock.fastForward(180)
@@ -106,7 +107,7 @@ await app.screenshot({ path: path.join(outDir, 'picker.png') })
 // Back to rest; a session row under the pointer shows the Archive swap.
 await app.clock.resume()
 await app.getByTestId('model-picker').click()
-await app.mouse.move(app.getByTestId('session-row-p1'))
+await app.getByTestId('session-row-p1').hover()
 await app.clock.fastForward(400)
 await app.clock.pause()
 await app.screenshot({ path: path.join(outDir, 'hover.png') })

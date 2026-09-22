@@ -1,5 +1,5 @@
 /**
- * HarnessModelPicker (comet crates/ui/src/pickers.rs): a harness rail beside a
+ * HarnessModelPicker (Zeron crates/ui/src/pickers.rs): a harness rail beside a
  * model list, the reasoning ladder under the selected row, and the context
  * window readout. Built on GPUIX's Select so positioning, keyboard nav, and
  * outside-click dismissal come from the platform layer.
@@ -37,8 +37,9 @@ function HarnessRail({ current, onPick }: { current: Harness; onPick: (harness: 
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              backgroundColor: active ? C.hover : C.wash0,
-              hover: { backgroundColor: C.hover },
+              // The rail sits inside the popover card: card_selected_bg().
+              backgroundColor: active ? C.selected : C.wash0,
+              hover: { backgroundColor: C.selected },
             }}
           >
             <svg
@@ -73,7 +74,7 @@ function LadderChip({
         alignItems: 'center',
         cursor: 'pointer',
         backgroundColor: selected ? C.active : C.wash0,
-        hover: { backgroundColor: selected ? C.active : C.hover },
+        hover: { backgroundColor: selected ? C.active : C.selected },
       }}
     >
       <text
@@ -220,7 +221,7 @@ function ModelRows({
               paddingRight: 8,
               borderRadius: 8,
               cursor: 'pointer',
-              hover: { backgroundColor: C.hover },
+              hover: { backgroundColor: C.selected },
             }}
           >
             <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>

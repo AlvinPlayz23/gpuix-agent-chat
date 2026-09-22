@@ -1,5 +1,5 @@
 /**
- * Harness + model catalog — the shape of comet/crates/ui/src/pickers.rs
+ * Harness + model catalog — the shape of zeron/crates/ui/src/pickers.rs
  * (`HarnessModelPicker`: harness rail + model list) and crates/harness
  * (`Model { label, description, reasoning_levels, options }`).
  *
@@ -37,7 +37,8 @@ export interface Harness {
 }
 
 /** pickers.rs: default_model = first row, default_reasoning = High when offered. */
-export const CLAUDE_TINT = '#e2795b'
+/** icons.rs claude_brand() — the Claude mark's brand orange. */
+export const CLAUDE_TINT = '#d97757'
 
 export const HARNESSES: Harness[] = [
   {

@@ -2,7 +2,7 @@
 
 Zeron's desktop shell, recreated in **GPUIX** (React → Zed's GPUI, no Electron, no web view).
 
-Goal: pixel-level parity with the real app in [`../comet`](../comet) — first the sidebar
+Goal: pixel-level parity with the real app in [`../zeron`](../zeron) — first the sidebar
 and transcript, then the rest of the window.
 
 ```
@@ -37,7 +37,7 @@ bun run screenshot  # writes screenshots/zeron.png via the GPUIX automation API
 `composer` test id, pauses the native motion clock, and lets the renderer write
 the PNG — the same frames on every run, with no desktop compositing involved.
 
-## Layout map — GPUIX ↔ comet
+## Layout map — GPUIX ↔ Zeron
 
 | This repo | Zeron source | Notes |
 | --- | --- | --- |
@@ -57,7 +57,7 @@ footer. Sending the first prompt starts a session and the composer **glides**
 down into the compact 48px dock — the selectors' row dissolves, the session
 footer (workspace chip + context meter) grows in, and the transcript fades in.
 
-This mirrors comet's `composer.rs`: the blank canvas is always expanded, the
+This mirrors Zeron's `composer.rs`: the blank canvas is always expanded, the
 route chrome ramps via `route_chrome_opacities`, and the move runs on
 `NEW_THREAD_TRANSITION` (420ms ease-out-quint). GPUIX `motion` only animates
 `width` / `height` / `opacity` / offsets / `borderRadius`, so the glide is
@@ -78,7 +78,7 @@ Selected rows take `wash(0.11)`; hovering an unselected row takes the same wash.
 
 ## Fixtures
 
-`src/data.ts` holds the sessions from `comet/docs/screenshots/sidebar-layout/detailed.png`
+`src/data.ts` holds the sessions from `zeron/docs/screenshots/sidebar-layout/detailed.png`
 plus a synthetic transcript. There is no engine, no RPC, and no persistence yet —
 sending a message appends a local turn.
 

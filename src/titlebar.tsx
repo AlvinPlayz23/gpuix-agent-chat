@@ -1,5 +1,5 @@
 /**
- * Zeron's titlebar row (comet crates/ui/src/shell.rs): a 38px strip with 4px
+ * Zeron's titlebar row (Zeron crates/ui/src/shell.rs): a 38px strip with 4px
  * top pad. The sidebar cluster (panel toggle, history arrows, new session)
  * sits over the sidebar's width; the session header (glyph, title, space) and
  * the right-pane toggle sit over the content card.
@@ -56,7 +56,7 @@ export function Titlebar({
   rightPaneOpen,
   onToggleRightPane,
 }: {
-  session: Session
+  session: Session | null
   sidebarOpen: boolean
   onToggleSidebar: () => void
   onNewSession: () => void
@@ -71,25 +71,31 @@ export function Titlebar({
         height: TITLEBAR_HEIGHT,
         flexShrink: 0,
         paddingTop: TITLEBAR_TOP_PAD,
+        backgroundColor: C.background,
       }}
     >
       <div
         style={{
-          width: SIDEBAR_WIDTH,
+          width: sidebarOpen ? SIDEBAR_WIDTH : 38,
           flexShrink: 0,
           display: 'flex',
           flexDirection: 'row',
           alignItems: 'center',
           gap: 5,
           paddingLeft: 12,
-          paddingRight: 12,
+          paddingRight: sidebarOpen ? 12 : 0,
+          backgroundColor: sidebarOpen ? C.shell : C.background,
         }}
       >
         <ChromeButton icon="panelLeft" active={!sidebarOpen} onClick={onToggleSidebar} testId="sidebar-toggle" />
-        <ChromeButton icon="arrowLeft" />
-        <ChromeButton icon="arrowRight" />
-        <ChromeButton icon="plus" onClick={onNewSession} testId="new-session" />
-        <div style={{ flexGrow: 1 }} />
+        {sidebarOpen && (
+          <>
+            <ChromeButton icon="arrowLeft" />
+            <ChromeButton icon="arrowRight" />
+            <ChromeButton icon="plus" onClick={onNewSession} testId="new-session" />
+            <div style={{ flexGrow: 1 }} />
+          </>
+        )}
       </div>
 
       <div
@@ -100,31 +106,34 @@ export function Titlebar({
           flexDirection: 'row',
           alignItems: 'center',
           gap: 8,
-          paddingLeft: 16,
+          paddingLeft: sidebarOpen ? 16 : 8,
           paddingRight: 12,
-          borderLeftWidth: 1,
-          borderColor: C.border,
+          backgroundColor: C.background,
         }}
       >
         <ZeronGlyph size={14} />
-        <text
-          testId="session-title"
-          style={{
-            fontSize: TEXT_SM,
-            fontWeight: 600,
-            color: C.text,
-            whiteSpace: 'nowrap',
-            textOverflow: 'ellipsis',
-            maxWidth: 420,
-          }}
-        >
-          {session.title}
-        </text>
-        <text style={{ fontSize: TEXT_SM, color: C.textFaint, whiteSpace: 'nowrap' }}>
-          {`${session.project} @ ${session.device}`}
-        </text>
+        {session && (
+          <>
+            <text
+              testId="session-title"
+              style={{
+                fontSize: TEXT_SM,
+                fontWeight: 600,
+                color: C.text,
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                maxWidth: 420,
+              }}
+            >
+              {session.title}
+            </text>
+            <text style={{ fontSize: TEXT_SM, color: C.textFaint, whiteSpace: 'nowrap' }}>
+              {`${session.project} @ ${session.device}`}
+            </text>
+          </>
+        )}
         <div style={{ flexGrow: 1 }} />
-        {session.branch && (
+        {session?.branch && (
           <div
             style={{
               display: 'flex',

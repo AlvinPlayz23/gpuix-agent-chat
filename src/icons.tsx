@@ -128,10 +128,11 @@ export function Icon({ name, size = 14, color }: { name: IconName; size?: number
 }
 
 /**
- * The Zeron asterisk glyph (the orange/red starburst seen next to session
- * titles and in the model chip). Drawn as an inline 8-spoke asterisk SVG.
+ * The harness asterisk mark (the orange starburst next to session titles and in
+ * the model chip): the Claude brand mark — icons.rs `claude_brand()` (#D97757).
+ * Rows paint it at 0.8 (sidebar.tsx); the titlebar and hero keep it at 1.0.
  */
-export function ZeronGlyph({ size = 13, color = '#e2795b' }: { size?: number; color?: string }) {
+export function ZeronGlyph({ size = 13, color = '#d97757' }: { size?: number; color?: string }) {
   const s = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
   <g stroke="currentColor" stroke-width="2.1" stroke-linecap="round">

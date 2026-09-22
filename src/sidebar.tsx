@@ -1,5 +1,5 @@
 /**
- * The Zeron sidebar (comet crates/ui shell.rs `render_chat_row` and friends),
+ * The Zeron sidebar (Zeron crates/ui shell.rs `render_chat_row` and friends),
  * recreated in GPUIX/React.
  *
  * Detailed row anatomy (SIDEBAR_SESSION_SLOT = 61px + 2px gap):
@@ -12,6 +12,7 @@ import { useState } from 'react'
 import { motion } from '@gpuix/react'
 import {
   C,
+  FONT_MONO,
   FONT_SANS,
   HARNESS_ICON,
   POPOVER_TRANSITION,
@@ -27,14 +28,12 @@ import {
   TEXT_SM,
   TEXT_XS,
   TRANSITION,
+  withAlpha,
 } from './theme'
 import { Icon, ZeronGlyph, type IconName } from './icons'
 import { Menu } from './menu'
+import { CLAUDE_TINT } from './catalog'
 import type { Session } from './data'
-
-function withAlpha(hex: string, alpha: number): string {
-  return `${hex}${Math.round(alpha * 255).toString(16)}`
-}
 
 /** Project artwork fallback: initial on 8% tint, letter at 85% (sidebar README). */
 function Monogram({ session }: { session: Session }) {
@@ -51,27 +50,36 @@ function Monogram({ session }: { session: Session }) {
         flexShrink: 0,
       }}
     >
-      <text style={{ fontSize: 9, fontFamily: 'Menlo', color: withAlpha(session.tint, 0.85) }}>
+      <text style={{ fontSize: 9, fontFamily: FONT_MONO, color: withAlpha(session.tint, 0.85) }}>
         {session.initial}
       </text>
     </div>
   )
 }
 
+/**
+ * PR badge — change_requests.rs `render_pull_request_badge(.., Sidebar, ..)`:
+ * 16px tall, px 4, radius 4, `tone @ 8%` plate and a `tone @ 85%` label in the
+ * mono face (hover: 16% plate, full-tone label).
+ */
 function PullRequestBadge({ number }: { number: number }) {
   return (
     <div
       style={{
-        backgroundColor: withAlpha(C.success, 0.12),
+        height: 16,
+        backgroundColor: withAlpha(C.success, 0.08),
         borderRadius: 4,
-        paddingLeft: 5,
-        paddingRight: 5,
-        paddingTop: 1,
-        paddingBottom: 1,
+        paddingLeft: 4,
+        paddingRight: 4,
+        display: 'flex',
+        alignItems: 'center',
         flexShrink: 0,
+        hover: { backgroundColor: withAlpha(C.success, 0.16) },
       }}
     >
-      <text style={{ fontSize: 10, fontWeight: 500, color: C.success }}>{`#${number}`}</text>
+      <text style={{ fontSize: 10, fontWeight: 500, fontFamily: FONT_MONO, color: withAlpha(C.success, 0.85) }}>
+        {`#${number}`}
+      </text>
     </div>
   )
 }
@@ -114,7 +122,12 @@ function SessionRow({
   const [hovered, setHovered] = useState(false)
   const [archiving, setArchiving] = useState(false)
   const height = session.branch ? (session.pr != null ? ROW_H_PR : ROW_H_BRANCH) : ROW_H
-  const wash = selected || hovered
+  // shell.rs render_chat_row: a selected row keeps `glass_selected_bg()` even
+  // under the pointer; an unselected row takes `glass_hover()` on hover.
+  const fill = selected ? C.selected : hovered ? C.hover : C.wash0
+  // shell.rs rest_text: selected rows read at full `text`, an idle row at 80%,
+  // and hover brightens the title to `text` as the wash blends in.
+  const titleColor = selected || hovered ? C.text : C.textBody
 
   return (
     <div
@@ -142,7 +155,7 @@ function SessionRow({
           the archive swap never shifts content (shell.rs corner). */}
       <motion.div
         initial={false}
-        animate={{ opacity: wash ? 1 : 0 }}
+        animate={{ opacity: selected || hovered ? 1 : 0 }}
         transition={TRANSITION}
         style={{
           position: 'absolute',
@@ -151,11 +164,11 @@ function SessionRow({
           right: 0,
           bottom: 0,
           borderRadius: ROW_RADIUS,
-          backgroundColor: C.selected,
+          backgroundColor: fill,
         }}
       />
       <RowLine1 session={session} archiving={archiving} onArchiveStart={() => setArchiving(true)} />
-      <RowLine2 session={session} />
+      <RowLine2 session={session} titleColor={titleColor} />
       {session.branch && <RowLine3 session={session} />}
     </div>
   )
@@ -208,17 +221,20 @@ function RowLine1({
   )
 }
 
-function RowLine2({ session }: { session: Session }) {
+function RowLine2({ session, titleColor }: { session: Session; titleColor: string }) {
+  // shell.rs: the harness mark keeps its brand tint at 0.8, or falls back to the
+  // row's sub-line tone (`tint.unwrap_or(subline).opacity(0.8)`).
+  const markTint = session.harness === 'claude' ? withAlpha(CLAUDE_TINT, 0.8) : C.harnessTint
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: SPACE_SM }}>
-      <ZeronGlyph size={HARNESS_ICON} />
+      <ZeronGlyph size={HARNESS_ICON} color={markTint} />
       <Monogram session={session} />
       <div style={{ flexGrow: 1, minWidth: 0 }}>
         <text
           style={{
             fontSize: TEXT_SM,
             lineHeight: 17,
-            color: C.text,
+            color: titleColor,
             whiteSpace: 'nowrap',
             textOverflow: 'ellipsis',
           }}
@@ -314,12 +330,14 @@ export function Sidebar({
   selectedId,
   onSelect,
   onOpenSettings,
+  mockData = true,
 }: {
   pinned: Session[]
   sessions: Session[]
   selectedId: string
   onSelect: (id: string) => void
   onOpenSettings?: () => void
+  mockData?: boolean
 }) {
   const [pinnedOpen, setPinnedOpen] = useState(true)
   const [sessionsOpen, setSessionsOpen] = useState(true)
@@ -335,14 +353,14 @@ export function Sidebar({
         flexDirection: 'column',
       }}
     >
-      {/* Spaces dropdown ("All projects") */}
+      {/* Spaces dropdown ("All projects"). No divider rule under this row:
+          the reference sidebar column is uniform (#181818 over its whole
+          height in zeron/docs/screenshots/sidebar-layout/detailed.png). */}
       <div
         style={{
           paddingLeft: 8,
           paddingRight: 8,
           paddingBottom: 4,
-          borderBottomWidth: 1,
-          borderColor: '#ffffff0f',
         }}
       >
         <div
@@ -386,12 +404,19 @@ export function Sidebar({
                 <Icon name="chevronDown" size={11} color={C.textFaint} />
               </div>
             }
-            options={[
-              { value: 'all', label: 'All projects', icon: 'folder' },
-              { value: 'fieldnotes', label: 'fieldnotes', icon: 'folder', hint: 'This device' },
-              { value: 'api', label: 'API server', icon: 'folder', hint: 'Build server' },
-              { value: 'new', label: 'New project…', icon: 'plus' },
-            ]}
+            options={
+              mockData
+                ? [
+                    { value: 'all', label: 'All projects', icon: 'folder' },
+                    { value: 'fieldnotes', label: 'fieldnotes', icon: 'folder', hint: 'This device' },
+                    { value: 'api', label: 'API server', icon: 'folder', hint: 'Build server' },
+                    { value: 'new', label: 'New project…', icon: 'plus' },
+                  ]
+                : [
+                    { value: 'all', label: 'All projects', icon: 'folder' },
+                    { value: 'new', label: 'New project…', icon: 'plus' },
+                  ]
+            }
           />
           <div
             style={{
@@ -552,7 +577,9 @@ function ProfileMenuRow({ icon, label, onClick }: { icon: IconName; label: strin
         paddingRight: 8,
         borderRadius: 7,
         cursor: 'pointer',
-        hover: { backgroundColor: C.hover },
+        // Rows inside the floating card take card_selected_bg(), like
+        // popover.rs menu_row (the chrome washes are for rows ON the glass).
+        hover: { backgroundColor: C.selected },
       }}
     >
       <Icon name={icon} size={14} color={C.textMuted} />

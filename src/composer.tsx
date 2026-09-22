@@ -1,5 +1,5 @@
 /**
- * The Zeron composer dock (comet crates/ui composer.rs + composer_dock):
+ * The Zeron composer dock (Zeron crates/ui composer.rs + composer_dock):
  *   row 1  paperclip · "Do anything…" · ✳ model chip · High · 200K · send
  *   footer workspace chip ("Local checkout") left, context meter right
  * The model chip opens the HarnessModelPicker; the meter mirrors
@@ -8,7 +8,18 @@
 
 import { useState } from 'react'
 import { motion } from '@gpuix/react'
-import { C, POPOVER_TRANSITION, TEXT_BODY, TEXT_MD, TEXT_SM, TEXT_XS } from './theme'
+import {
+  C,
+  COMPOSER_DOCK_RADIUS,
+  COMPOSER_HERO_RADIUS,
+  COMPACT_TOTAL_HEIGHT,
+  INPUT_LINE_HEIGHT,
+  INPUT_TEXT_SIZE,
+  POPOVER_TRANSITION,
+  TEXT_MD,
+  TEXT_SM,
+  TEXT_XS,
+} from './theme'
 import { Icon } from './icons'
 import { Menu, PickerChip } from './menu'
 import { ModelPicker, TraitsChip } from './model-picker'
@@ -42,6 +53,7 @@ export function Composer({
   workspace,
   onSend,
   hero = false,
+  mockData = true,
 }: {
   harness: Harness
   model: Model
@@ -53,12 +65,14 @@ export function Composer({
   onSend: (text: string) => void
   /** New-thread (blank canvas) layout: a tall card. Established sessions dock compact. */
   hero?: boolean
+  /** Appearance → Mock data: off zeroes the demo context meter and target fixtures. */
+  mockData?: boolean
 }) {
   const [draft, setDraft] = useState('')
   const [focused, setFocused] = useState(false)
   const [meterOpen, setMeterOpen] = useState(false)
 
-  const used = 64_000
+  const used = mockData ? 64_000 : 0
   const capacity = model.context
   const remaining = capacity - used
 
@@ -68,7 +82,10 @@ export function Composer({
     setDraft('')
   }
 
-  const sendButton = (size: number) => (
+  // composer.rs render_send_button: a size-7 (28px) light plate that is ALWAYS
+  // `theme.text` — only a blocked submission dims it to 0.35 — with the up-arrow
+  // in `theme.bg` and `hover: opacity 0.85`. An empty draft simply does nothing.
+  const sendButton = (size = 28) => (
     <div
       onClick={send}
       testId="send"
@@ -76,16 +93,16 @@ export function Composer({
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: draft.trim() ? C.text : C.raised,
+        backgroundColor: C.text,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
         flexShrink: 0,
-        hover: { backgroundColor: '#ffffff' },
+        hover: { opacity: 0.85 },
       }}
     >
-      <Icon name="arrowUp" size={16} color={draft.trim() ? C.background : C.textMuted} />
+      <Icon name="arrowUp" size={14} color={C.background} />
     </div>
   )
 
@@ -106,10 +123,10 @@ export function Composer({
             paddingBottom: 10,
             paddingLeft: 18,
             paddingRight: 12,
-            borderRadius: 26,
-            backgroundColor: C.input,
+            borderRadius: COMPOSER_HERO_RADIUS,
+            backgroundColor: C.raised,
             borderWidth: 1,
-            borderColor: focused ? C.borderStrong : C.border,
+            borderColor: focused ? C.borderStrong : C.pillBorder,
           }}
         >
           <textarea
@@ -118,11 +135,12 @@ export function Composer({
             minRows={1}
             maxRows={4}
             autoFocus
+            testId="composer-input"
             onChange={(e) => setDraft(e.value ?? '')}
             onSubmit={send}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
-            style={{ width: '100%', minWidth: 0, height: 52, fontSize: TEXT_BODY, lineHeight: 22, color: C.text }}
+            style={{ width: '100%', minWidth: 0, height: 52, fontSize: INPUT_TEXT_SIZE, lineHeight: INPUT_LINE_HEIGHT, color: C.text }}
             theme={{ caret: C.accent }}
           />
           <div
@@ -135,7 +153,7 @@ export function Composer({
               marginTop: 0,
             }}
           >
-            <Icon name="paperclip" size={15} color={C.textFaint} />
+            <Icon name="paperclip" size={16} color={C.textMuted} />
             <ModelPicker
               harness={harness}
               model={model}
@@ -146,7 +164,7 @@ export function Composer({
             />
             <TraitsChip model={model} level={level} />
             <div style={{ flexGrow: 1 }} />
-            {sendButton(34)}
+            {sendButton()}
           </div>
         </div>
       </div>
@@ -162,26 +180,27 @@ export function Composer({
           flexDirection: 'row',
           alignItems: 'center',
           gap: 8,
-          height: 48,
+          height: COMPACT_TOTAL_HEIGHT,
           paddingLeft: 14,
           paddingRight: 6,
-          borderRadius: 24,
-          backgroundColor: C.input,
+          borderRadius: COMPOSER_DOCK_RADIUS,
+          backgroundColor: C.raised,
           borderWidth: 1,
-          borderColor: focused ? C.borderStrong : C.border,
+          borderColor: focused ? C.borderStrong : C.pillBorder,
         }}
       >
-        <Icon name="paperclip" size={15} color={C.textFaint} />
+        <Icon name="paperclip" size={16} color={C.textMuted} />
         <textarea
           value={draft}
           placeholder="Do anything…"
           minRows={1}
           maxRows={1}
+          testId="composer-input"
           onChange={(e) => setDraft(e.value ?? '')}
           onSubmit={send}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          style={{ flexGrow: 1, minWidth: 0, fontSize: TEXT_BODY, lineHeight: 20, color: C.text }}
+          style={{ flexGrow: 1, minWidth: 0, fontSize: INPUT_TEXT_SIZE, lineHeight: INPUT_LINE_HEIGHT, color: C.text }}
           theme={{ caret: C.accent }}
         />
         <ModelPicker
@@ -193,7 +212,7 @@ export function Composer({
           onLevel={onLevel}
         />
         <TraitsChip model={model} level={level} />
-        {sendButton(34)}
+        {sendButton()}
       </div>
 
       <ComposerFooter
@@ -215,7 +234,15 @@ export function Composer({
  * chip right-aligned above the hero card. These dissolve away (their row height
  * scales with the new-thread chrome) as the composer docks into a session.
  */
-export function HeroTargetSelectors({ device, workspace }: { device: string; workspace: string }) {
+export function HeroTargetSelectors({
+  device,
+  workspace,
+  mockData = true,
+}: {
+  device: string
+  workspace: string
+  mockData?: boolean
+}) {
   return (
     <div
       style={{
@@ -234,10 +261,14 @@ export function HeroTargetSelectors({ device, workspace }: { device: string; wor
         width={224}
         testId="picker-device"
         trigger={<PickerChip icon="monitor" label={device} />}
-        options={[
-          { value: device, label: device, icon: 'monitor', hint: 'online' },
-          { value: 'build', label: 'Build server', icon: 'monitor', hint: 'offline' },
-        ]}
+        options={
+          mockData
+            ? [
+                { value: device, label: device, icon: 'monitor', hint: 'online' },
+                { value: 'build', label: 'Build server', icon: 'monitor', hint: 'offline' },
+              ]
+            : [{ value: device, label: device, icon: 'monitor', hint: 'online' }]
+        }
       />
       <Menu
         value={workspace}
@@ -246,11 +277,18 @@ export function HeroTargetSelectors({ device, workspace }: { device: string; wor
         width={280}
         testId="picker-project"
         trigger={<PickerChip icon="folder" label={workspace} />}
-        options={[
-          { value: workspace, label: workspace, icon: 'folder' },
-          { value: 'api', label: 'API server/main', icon: 'folder' },
-          { value: 'new', label: 'New project…', icon: 'plus' },
-        ]}
+        options={
+          mockData
+            ? [
+                { value: workspace, label: workspace, icon: 'folder' },
+                { value: 'api', label: 'API server/main', icon: 'folder' },
+                { value: 'new', label: 'New project…', icon: 'plus' },
+              ]
+            : [
+                { value: workspace, label: workspace, icon: 'folder' },
+                { value: 'new', label: 'New project…', icon: 'plus' },
+              ]
+        }
       />
     </div>
   )

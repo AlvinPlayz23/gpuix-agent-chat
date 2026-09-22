@@ -4,7 +4,7 @@
  * hero target selectors (device / workspace), the sidebar spaces dropdown, and
  * the titlebar's right-pane surface picker.
  *
- * Visual language mirrors comet's popover.rs popover_card on the `for_popup`
+ * Visual language mirrors Zeron's popover.rs popover_card on the `for_popup`
  * theme: an `overlay` card with a 10–12px radius, a hairline border, and rows
  * that take the `hover` wash. The card fades in over POPOVER_TRANSITION.
  */
@@ -81,7 +81,9 @@ export function Menu({
                   paddingRight: 8,
                   borderRadius: 8,
                   cursor: 'pointer',
-                  hover: { backgroundColor: C.hover },
+                  // popover.rs menu_row: rows inside the floating card take
+                  // card_selected_bg(), one notch below the on-glass hover.
+                  hover: { backgroundColor: C.selected },
                 }}
               >
                 {option.icon && <Icon name={option.icon} size={13} color={C.textMuted} />}

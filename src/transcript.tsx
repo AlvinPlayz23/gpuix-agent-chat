@@ -1,5 +1,5 @@
 /**
- * Transcript rows (comet crates/ui/src/transcript.rs): one row per block.
+ * Transcript rows (Zeron crates/ui/src/transcript.rs): one row per block.
  *   user       one bubble, right-aligned, 22px line box, 5-line collapse cap
  *   assistant  markdown, then a timestamp + copy footer row
  *   commands   the collapsed tool summary row: chevron, "Ran N commands · …"
@@ -8,28 +8,44 @@
 
 import { useState } from 'react'
 import { motion } from '@gpuix/react'
-import { C, POPOVER_TRANSITION, TEXT_BODY, TEXT_SM, USER_LINE_HEIGHT } from './theme'
+import {
+  BUBBLE_RADIUS,
+  C,
+  MD_BLOCK_GAP,
+  MD_CODE_LINE_HEIGHT,
+  MD_CODE_TEXT_SIZE,
+  MD_HEADING_LINE_HEIGHTS,
+  MD_HEADING_SIZES,
+  MD_LINE_HEIGHT,
+  MD_TEXT_SIZE,
+  POPOVER_TRANSITION,
+  TEXT_BODY,
+  TEXT_SM,
+  USER_LINE_HEIGHT,
+} from './theme'
 import { Icon } from './icons'
 import type { Turn } from './data'
 
+/** The markdown renderer's theme — Zeron's MD_* metrics + code tokens. */
 const MD_THEME = {
   text: C.text,
   textMuted: C.textMuted,
   textFaint: C.textFaint,
-  textDim: C.textMuted,
+  textDim: C.textDim,
   border: C.border,
   bg: C.background,
   accent: C.accent,
   caret: C.accent,
-  codeWash: '#ebebef14',
+  codeText: C.codeText,
+  codeWash: C.codeWash,
   metrics: {
-    mdTextSize: TEXT_BODY,
-    mdLineHeight: 22,
-    mdBlockGap: 14,
-    mdHeadingSizes: [20, 17, 15, 15],
-    mdHeadingLineHeights: [28, 24, 22, 22],
-    codeTextSize: 12.5,
-    codeLineHeight: 20,
+    mdTextSize: MD_TEXT_SIZE,
+    mdLineHeight: MD_LINE_HEIGHT,
+    mdBlockGap: MD_BLOCK_GAP,
+    mdHeadingSizes: MD_HEADING_SIZES,
+    mdHeadingLineHeights: MD_HEADING_LINE_HEIGHTS,
+    codeTextSize: MD_CODE_TEXT_SIZE,
+    codeLineHeight: MD_CODE_LINE_HEIGHT,
   },
 }
 
@@ -187,11 +203,11 @@ function UserTurn({ turn }: { turn: Extract<Turn, { role: 'user' }> }) {
         style={{
           maxWidth: 620,
           backgroundColor: C.bubble,
-          borderRadius: 16,
+          borderRadius: BUBBLE_RADIUS,
           paddingLeft: 16,
           paddingRight: 16,
-          paddingTop: 11,
-          paddingBottom: 11,
+          paddingTop: 10,
+          paddingBottom: 10,
           display: 'flex',
           flexDirection: 'column',
           gap: 6,

@@ -38,22 +38,34 @@ export function App() {
   // The settings view replaces the sessions sidebar + content card.
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsSection, setSettingsSection] = useState<'devices' | 'agents' | 'accounts' | 'appearance' | 'shortcuts' | 'archived'>('agents')
+  // Appearance → Mock data: on keeps the screenshot fixtures; off clears every
+  // fake session/title/transcript/diff and leaves only the empty shell.
+  const [mockData, setMockData] = useState(true)
 
-  const selected: Session = [...PINNED, ...SESSIONS].find((s) => s.id === selectedId) ?? SESSIONS[0]
-  const workspace = `${selected.project}/${selected.branch.split('/')[1] ?? 'main'}`
+  const pinned = mockData ? PINNED : []
+  const sessions = mockData ? SESSIONS : []
+  const selected: Session | null = mockData
+    ? ([...PINNED, ...SESSIONS].find((s) => s.id === selectedId) ?? SESSIONS[0])
+    : null
+  const workspace = selected ? `${selected.project}/${selected.branch.split('/')[1] ?? 'main'}` : 'No project'
+  const device = selected?.device ?? 'This device'
 
   const send = (text: string) => {
     setStarted(true)
-    setTurns((current) => [
-      ...current,
-      { role: 'user', text },
-      { role: 'commands', text: 'Ran 3 commands · read 2 files' },
-      {
-        role: 'assistant',
-        text: 'Working on it — this is a **GPUIX** recreation of the Zeron shell. The real engine would take over from here.',
-        at: 'Sep 6, 5:22 PM',
-      },
-    ])
+    setTurns((current) => {
+      const user: Turn = { role: 'user', text }
+      if (!mockData) return [...current, user]
+      return [
+        ...current,
+        user,
+        { role: 'commands', text: 'Ran 3 commands · read 2 files' },
+        {
+          role: 'assistant',
+          text: 'Working on it — this is a **GPUIX** recreation of the Zeron shell. The real engine would take over from here.',
+          at: 'Sep 6, 5:22 PM',
+        },
+      ]
+    })
   }
 
   // The + button returns to the blank hero canvas.
@@ -62,7 +74,16 @@ export function App() {
     setStarted(false)
   }
 
+  const setMockDataMode = (enabled: boolean) => {
+    setMockData(enabled)
+    // Switching modes must not leak the previous fixture transcript into the
+    // empty shell (or leave the empty shell up when the fixtures return).
+    setTurns(enabled ? TURNS : [])
+    setStarted(enabled)
+  }
+
   const selectSession = (id: string) => {
+    if (!mockData) return
     setSelectedId(id)
     // Fixture sessions are established threads; restore the demo transcript.
     setTurns(TURNS)
@@ -99,7 +120,7 @@ export function App() {
               onSection={setSettingsSection}
               onBack={() => setSettingsOpen(false)}
             />
-            <SettingsView section={settingsSection} />
+            <SettingsView section={settingsSection} mockData={mockData} onMockData={setMockDataMode} />
           </>
         ) : (
           <>
@@ -113,11 +134,12 @@ export function App() {
             >
               <div style={{ width: SIDEBAR_WIDTH, height: '100%' }}>
                 <Sidebar
-                  pinned={PINNED}
-                  sessions={SESSIONS}
-                  selectedId={selectedId}
+                  pinned={pinned}
+                  sessions={sessions}
+                  selectedId={selected?.id ?? ''}
                   onSelect={selectSession}
                   onOpenSettings={() => setSettingsOpen(true)}
+                  mockData={mockData}
                 />
               </div>
             </motion.div>
@@ -129,7 +151,7 @@ export function App() {
               model={model}
               level={level}
               workspace={workspace}
-              device={selected.device}
+              device={device}
               onHarness={(next) => {
                 setHarness(next)
                 setModel(next.models[0] ?? model)
@@ -137,9 +159,10 @@ export function App() {
               onModel={setModel}
               onLevel={setLevel}
               onSend={send}
+              mockData={mockData}
             />
 
-            <ChangesPane open={changesOpen} onClose={() => setChangesOpen(false)} />
+            <ChangesPane open={changesOpen} onClose={() => setChangesOpen(false)} mockData={mockData} />
           </>
         )}
       </div>
@@ -159,6 +182,7 @@ function ContentCard({
   onModel,
   onLevel,
   onSend,
+  mockData,
 }: {
   turns: Turn[]
   started: boolean
@@ -171,6 +195,7 @@ function ContentCard({
   onModel: (model: Model) => void
   onLevel: (level: ReasoningLevel | null) => void
   onSend: (text: string) => void
+  mockData: boolean
 }) {
   const { height: viewportHeight } = useWindowSize()
   const hero = !started
@@ -178,9 +203,9 @@ function ContentCard({
   const heroHeight = 32 + COMPOSER_HERO_HEIGHT // selectors (24+8) + hero card
   const dockHeight = COMPOSER_DOCK_HEIGHT + 6 // pill + footer gap
   const contentHeight = viewportHeight - TITLEBAR_HEIGHT
-  // Hero: the block's vertical center sits at the canvas middle. Dock: its
+  // Hero: the block floats a touch above the canvas middle. Dock: its
   // bottom rests 16px above the content card's bottom edge.
-  const heroTop = Math.max((contentHeight - heroHeight) / 2, 24)
+  const heroTop = Math.max((contentHeight - heroHeight) / 2 - 56, 24)
   const dockTop = Math.max(contentHeight - dockHeight - 16, 24)
   // Bottom slot reserved for the docked composer so the transcript clears it.
   const dockFootprint = dockHeight + 16
@@ -262,7 +287,7 @@ function ContentCard({
             style={{ width: '100%', maxWidth: HERO_MAX_WIDTH, flexShrink: 0, overflow: 'hidden' }}
           >
             <div style={{ paddingBottom: 8 }}>
-              <HeroTargetSelectors device={device} workspace={workspace} />
+              <HeroTargetSelectors device={device} workspace={workspace} mockData={mockData} />
             </div>
           </motion.div>
 
@@ -285,6 +310,7 @@ function ContentCard({
               workspace={workspace}
               onSend={onSend}
               hero={hero}
+              mockData={mockData}
             />
           </motion.div>
         </div>

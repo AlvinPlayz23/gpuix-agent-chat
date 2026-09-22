@@ -1,5 +1,5 @@
 /**
- * The branch-changes pane (comet crates/ui/src/changes.rs, right of the
+ * The branch-changes pane (Zeron crates/ui/src/changes.rs, right of the
  * transcript in apps/landing/public/assets/app-screenshot.jpg): a branch
  * selector, a changed-file summary, and file-by-file diffs. The diff itself is
  * GPUIX's native <diff>, which flows inside this pane's own scroller.
@@ -42,7 +42,15 @@ diff --git a/crates/ui/src/shell.rs b/crates/ui/src/shell.rs
  }
 `
 
-export function ChangesPane({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function ChangesPane({
+  open,
+  onClose,
+  mockData = true,
+}: {
+  open: boolean
+  onClose: () => void
+  mockData?: boolean
+}) {
   const [surface, setSurface] = useState<Surface>('changes')
   if (!open) return null
   const active = SURFACES.find((s) => s.value === surface) ?? SURFACES[0]
@@ -64,13 +72,16 @@ export function ChangesPane({ open, onClose }: { open: boolean; onClose: () => v
           borderColor: C.border,
         }}
       >
-        <ChangesHeader active={active} onSurface={setSurface} onClose={onClose} />
-        {surface === 'changes' && (
-          <>
-            <ChangesSummary />
-            <ChangesList />
-          </>
-        )}
+        <ChangesHeader active={active} onSurface={setSurface} onClose={onClose} mockData={mockData} />
+        {surface === 'changes' &&
+          (mockData ? (
+            <>
+              <ChangesSummary />
+              <ChangesList />
+            </>
+          ) : (
+            <EmptyChanges />
+          ))}
         {surface === 'files' && <PlaceholderSurface label="Files" detail="Workspace file tree and previews" />}
         {surface === 'browser' && <PlaceholderSurface label="Browser" detail="In-app web surface" />}
         {surface === 'terminal' && <PlaceholderSurface label="Terminal" detail="Session shell" />}
@@ -97,15 +108,37 @@ function PlaceholderSurface({ label, detail }: { label: string; detail: string }
     </div>
   )
 }
+function EmptyChanges() {
+  return (
+    <div
+      style={{
+        flexGrow: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+      }}
+    >
+      <text style={{ fontSize: TEXT_SM, fontWeight: 500, color: C.text }}>No branch changes</text>
+      <text style={{ fontSize: TEXT_XS, color: C.textFaint }}>Mock diffs are hidden</text>
+    </div>
+  )
+}
+
+
 
 function ChangesHeader({
   active,
   onSurface,
   onClose,
+  mockData,
 }: {
   active: { value: Surface; label: string; icon: IconName }
   onSurface: (surface: Surface) => void
   onClose: () => void
+  mockData: boolean
 }) {
   return (
     <div
@@ -155,14 +188,16 @@ function ChangesHeader({
         }
         options={SURFACES.map((surface) => ({ value: surface.value, label: surface.label, icon: surface.icon }))}
       />
-      <div
-        style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 6, height: 26, flexShrink: 1, minWidth: 0 }}
-      >
-        <Icon name="gitBranch" size={12} color={C.textFaint} />
-        <text style={{ fontSize: 12, color: C.textMuted, whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-          comet/takeover-claude
-        </text>
-      </div>
+      {mockData && (
+        <div
+          style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 6, height: 26, flexShrink: 1, minWidth: 0 }}
+        >
+          <Icon name="gitBranch" size={12} color={C.textFaint} />
+          <text style={{ fontSize: 12, color: C.textMuted, whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+            Zeron/takeover-claude
+          </text>
+        </div>
+      )}
       <div style={{ flexGrow: 1 }} />
       <div
         onClick={onClose}

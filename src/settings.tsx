@@ -1,5 +1,5 @@
 /**
- * The Settings view (comet crates/ui/src/settings.rs + appearance.rs, and
+ * The Settings view (Zeron crates/ui/src/settings.rs + appearance.rs, and
  * docs/media/harness-settings/s2-agents-settings.png).
  *
  * Layout: the sessions sidebar is replaced by a settings nav (Devices /
@@ -243,6 +243,55 @@ function AgentsSection() {
 }
 
 
+function AppearanceSection({
+  mockData,
+  onMockData,
+}: {
+  mockData: boolean
+  onMockData: (enabled: boolean) => void
+}) {
+  return (
+    <>
+      <text style={{ fontSize: TEXT_SM, lineHeight: 20, color: C.textMuted }}>
+        Control whether the shell shows its demo fixtures or stays empty.
+      </text>
+      <div
+        style={{
+          marginTop: 24,
+          display: 'flex',
+          flexDirection: 'column',
+          borderWidth: 1,
+          borderColor: C.border,
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 14,
+            paddingLeft: 16,
+            paddingRight: 16,
+            paddingTop: 14,
+            paddingBottom: 14,
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flexGrow: 1, minWidth: 0 }}>
+            <text style={{ fontSize: TEXT_BODY, fontWeight: 600, color: C.text }}>Mock data</text>
+            <text style={{ fontSize: TEXT_SM, lineHeight: 18, color: C.textMuted }}>
+              Show the fixture sidebar sessions, transcript, title bar, and branch diffs. Turn off for an empty shell.
+            </text>
+          </div>
+          <Toggle on={mockData} onToggle={() => onMockData(!mockData)} />
+        </div>
+      </div>
+    </>
+  )
+}
+
+
 function PlaceholderSection({ label }: { label: string }) {
   return (
     <text style={{ fontSize: TEXT_SM, lineHeight: 20, color: C.textMuted }}>
@@ -252,7 +301,15 @@ function PlaceholderSection({ label }: { label: string }) {
 }
 
 /** The settings content card: section header + body. */
-export function SettingsView({ section }: { section: Section }) {
+export function SettingsView({
+  section,
+  mockData,
+  onMockData,
+}: {
+  section: Section
+  mockData: boolean
+  onMockData: (enabled: boolean) => void
+}) {
   const active = SECTIONS.find((s) => s.id === section) ?? SECTIONS[1]
   return (
     <div
@@ -315,7 +372,13 @@ export function SettingsView({ section }: { section: Section }) {
               <div style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.success }} />
             </div>
           </div>
-          {section === 'agents' ? <AgentsSection /> : <PlaceholderSection label={active.label} />}
+          {section === 'agents' ? (
+            <AgentsSection />
+          ) : section === 'appearance' ? (
+            <AppearanceSection mockData={mockData} onMockData={onMockData} />
+          ) : (
+            <PlaceholderSection label={active.label} />
+          )}
         </div>
       </motion.div>
     </div>

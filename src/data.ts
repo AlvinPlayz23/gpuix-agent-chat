@@ -1,5 +1,5 @@
 /**
- * Fixture data matching comet/docs/screenshots/sidebar-layout/detailed.png.
+ * Fixture data matching zeron/docs/screenshots/sidebar-layout/detailed.png.
  * Sessions are attention-sorted into Pinned and Sessions accordions, exactly
  * like the reference screenshot.
  */
