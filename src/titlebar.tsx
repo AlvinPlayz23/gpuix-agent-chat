@@ -8,6 +8,7 @@
  * keeps its native titlebar and this row reads as the app toolbar.
  */
 
+import { useWindowSize } from '@gpuix/react'
 import { C, SIDEBAR_WIDTH, TEXT_SM, TITLEBAR_HEIGHT, TITLEBAR_TOP_PAD } from './theme'
 import { Icon, ZeronGlyph } from './icons'
 import type { Session } from './data'
@@ -63,6 +64,16 @@ export function Titlebar({
   rightPaneOpen: boolean
   onToggleRightPane: () => void
 }) {
+  const { width: windowWidth } = useWindowSize()
+  // Anchor the session identity to the same centered content column as the
+  // transcript/composer instead of letting it float at the titlebar's left edge.
+  const contentLeft = sidebarOpen ? SIDEBAR_WIDTH : 0
+  const contentRight = rightPaneOpen ? 420 : 0
+  const contentWidth = Math.max(windowWidth - contentLeft - contentRight, 0)
+  const contentPad = Math.max((contentWidth - 720) / 2, 0) + 24
+  const collapsedButtonOffset = sidebarOpen ? 0 : 38
+  const titlePaddingLeft = Math.max(contentPad - collapsedButtonOffset, 8)
+
   return (
     <div
       style={{
@@ -74,29 +85,20 @@ export function Titlebar({
         backgroundColor: C.background,
       }}
     >
-      <div
-        style={{
-          width: sidebarOpen ? SIDEBAR_WIDTH : 38,
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 5,
-          paddingLeft: 12,
-          paddingRight: sidebarOpen ? 12 : 0,
-          backgroundColor: sidebarOpen ? C.shell : C.background,
-        }}
-      >
-        <ChromeButton icon="panelLeft" active={!sidebarOpen} onClick={onToggleSidebar} testId="sidebar-toggle" />
-        {sidebarOpen && (
-          <>
-            <ChromeButton icon="arrowLeft" />
-            <ChromeButton icon="arrowRight" />
-            <ChromeButton icon="plus" onClick={onNewSession} testId="new-session" />
-            <div style={{ flexGrow: 1 }} />
-          </>
-        )}
-      </div>
+      {!sidebarOpen && (
+        <div
+          style={{
+            width: 38,
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            paddingLeft: 12,
+            backgroundColor: C.background,
+          }}
+        >
+          <ChromeButton icon="panelLeft" active onClick={onToggleSidebar} testId="sidebar-toggle" />
+        </div>
+      )}
 
       <div
         style={{
@@ -106,7 +108,7 @@ export function Titlebar({
           flexDirection: 'row',
           alignItems: 'center',
           gap: 8,
-          paddingLeft: sidebarOpen ? 16 : 8,
+          paddingLeft: titlePaddingLeft,
           paddingRight: 12,
           backgroundColor: C.background,
         }}

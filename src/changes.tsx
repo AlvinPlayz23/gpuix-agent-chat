@@ -44,22 +44,19 @@ diff --git a/crates/ui/src/shell.rs b/crates/ui/src/shell.rs
 
 export function ChangesPane({
   open,
-  onClose,
   mockData = true,
 }: {
   open: boolean
-  onClose: () => void
   mockData?: boolean
 }) {
   const [surface, setSurface] = useState<Surface>('changes')
-  if (!open) return null
   const active = SURFACES.find((s) => s.value === surface) ?? SURFACES[0]
   return (
     <motion.div
-      initial={{ opacity: 0, width: 0 }}
-      animate={{ opacity: 1, width: 420 }}
+      initial={false}
+      animate={{ opacity: open ? 1 : 0, width: open ? 420 : 0 }}
       transition={POPOVER_TRANSITION}
-      style={{ flexShrink: 0, overflow: 'hidden', height: '100%' }}
+      style={{ flexShrink: 0, overflow: 'hidden', height: '100%', pointerEvents: open ? 'auto' : 'none' }}
     >
       <div
         style={{
@@ -72,7 +69,7 @@ export function ChangesPane({
           borderColor: C.border,
         }}
       >
-        <ChangesHeader active={active} onSurface={setSurface} onClose={onClose} mockData={mockData} />
+        <ChangesHeader active={active} onSurface={setSurface} mockData={mockData} />
         {surface === 'changes' &&
           (mockData ? (
             <>
@@ -132,12 +129,10 @@ function EmptyChanges() {
 function ChangesHeader({
   active,
   onSurface,
-  onClose,
   mockData,
 }: {
   active: { value: Surface; label: string; icon: IconName }
   onSurface: (surface: Surface) => void
-  onClose: () => void
   mockData: boolean
 }) {
   return (
@@ -199,23 +194,6 @@ function ChangesHeader({
         </div>
       )}
       <div style={{ flexGrow: 1 }} />
-      <div
-        onClick={onClose}
-        testId="changes-close"
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: 6,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          flexShrink: 0,
-          hover: { backgroundColor: C.hover },
-        }}
-      >
-        <Icon name="panelRight" size={14} color={C.textMuted} />
-      </div>
     </div>
   )
 }

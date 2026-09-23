@@ -82,9 +82,9 @@ export function Composer({
     setDraft('')
   }
 
-  // composer.rs render_send_button: a size-7 (28px) light plate that is ALWAYS
-  // `theme.text` — only a blocked submission dims it to 0.35 — with the up-arrow
-  // in `theme.bg` and `hover: opacity 0.85`. An empty draft simply does nothing.
+  // Send plate: full text color once there is a draft; empty drafts dim to
+  // textFaint so the composer does not shout a white button before it can send.
+  // The up-arrow uses the page background; hover keeps the 0.85 opacity glide.
   const sendButton = (size = 28) => (
     <div
       onClick={send}
@@ -93,7 +93,7 @@ export function Composer({
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: C.text,
+        backgroundColor: draft.trim() ? C.text : C.textFaint,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -124,9 +124,10 @@ export function Composer({
             paddingLeft: 18,
             paddingRight: 12,
             borderRadius: COMPOSER_HERO_RADIUS,
-            backgroundColor: C.raised,
+            backgroundColor: C.input,
             borderWidth: 1,
-            borderColor: focused ? C.borderStrong : C.pillBorder,
+            borderColor: focused ? C.selection : C.border,
+            boxShadow: { offsetX: 0, offsetY: 10, blurRadius: 28, spreadRadius: -18, color: '#00000066' },
           }}
         >
           <textarea
@@ -184,9 +185,10 @@ export function Composer({
           paddingLeft: 14,
           paddingRight: 6,
           borderRadius: COMPOSER_DOCK_RADIUS,
-          backgroundColor: C.raised,
+          backgroundColor: C.input,
           borderWidth: 1,
-          borderColor: focused ? C.borderStrong : C.pillBorder,
+          borderColor: focused ? C.selection : C.border,
+          boxShadow: { offsetX: 0, offsetY: 10, blurRadius: 28, spreadRadius: -18, color: '#00000066' },
         }}
       >
         <Icon name="paperclip" size={16} color={C.textMuted} />

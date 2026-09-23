@@ -9,11 +9,12 @@ import {
   SIDEBAR_WIDTH,
   STATUS_STRIP_HEIGHT,
   TITLEBAR_HEIGHT,
+  TITLEBAR_TOP_PAD,
   TRANSITION,
 } from './src/theme'
 import { DEFAULT_THEME_ID } from './src/themes'
 import { Sidebar } from './src/sidebar'
-import { Titlebar } from './src/titlebar'
+import { ChromeButton, Titlebar } from './src/titlebar'
 import { Composer, HeroTargetSelectors } from './src/composer'
 import { Transcript } from './src/transcript'
 import { ChangesPane } from './src/changes'
@@ -40,7 +41,7 @@ export function App() {
   // The settings view replaces the sessions sidebar + content card.
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settingsSection, setSettingsSection] = useState<'devices' | 'agents' | 'accounts' | 'appearance' | 'shortcuts' | 'archived'>('agents')
-  // Appearance → Mock data: on keeps the screenshot fixtures; off clears every
+  // Appearance â†’ Mock data: on keeps the screenshot fixtures; off clears every
   // fake session/title/transcript/diff and leaves only the empty shell.
   const [mockData, setMockData] = useState(true)
   const [themeId, setThemeId] = useState(DEFAULT_THEME_ID)
@@ -66,10 +67,10 @@ export function App() {
       return [
         ...current,
         user,
-        { role: 'commands', text: 'Ran 3 commands · read 2 files' },
+        { role: 'commands', text: 'Ran 3 commands Â· read 2 files' },
         {
           role: 'assistant',
-          text: 'Working on it — this is a **GPUIX** recreation of the Zeron shell. The real engine would take over from here.',
+          text: 'Working on it â€” this is a **GPUIX** recreation of the Zeron shell. The real engine would take over from here.',
           at: 'Sep 6, 5:22 PM',
         },
       ]
@@ -103,55 +104,87 @@ export function App() {
       testId="app"
       style={{
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',
         width: '100%',
         height: '100%',
-        // Zeron's frost shell: sidebar and titlebar sit on it; the content card
-        // is the darkest plane and provides the separation border.
         backgroundColor: C.shell,
       }}
     >
-      <Titlebar
-        session={selected}
-        sidebarOpen={sidebarOpen}
-        onToggleSidebar={() => setSidebarOpen((v) => !v)}
-        onNewSession={newSession}
-        rightPaneOpen={changesOpen}
-        onToggleRightPane={() => setChangesOpen((v) => !v)}
-      />
+      {!settingsOpen && (
+        <motion.div
+          initial={false}
+          animate={{ width: sidebarOpen ? SIDEBAR_WIDTH : 0 }}
+          transition={TRANSITION}
+          style={{ height: '100%', flexShrink: 0, overflow: 'hidden' }}
+        >
+          {/* One real full-height sidebar column: titlebar controls and the
+              session list live in the same clipped surface, so there is no
+              separate titlebar chunk trying to keep up. */}
+          <div style={{ width: SIDEBAR_WIDTH, height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: C.shell }}>
+            <div
+              style={{
+                height: TITLEBAR_HEIGHT,
+                flexShrink: 0,
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                paddingLeft: 12,
+                paddingRight: 12,
+                paddingTop: TITLEBAR_TOP_PAD,
+              }}
+            >
+              <ChromeButton icon="panelLeft" onClick={() => setSidebarOpen(false)} testId="sidebar-toggle" />
+              <ChromeButton icon="arrowLeft" />
+              <ChromeButton icon="arrowRight" />
+              <ChromeButton icon="plus" onClick={newSession} testId="new-session" />
+              <div style={{ flexGrow: 1 }} />
+            </div>
+            <div style={{ flexGrow: 1, minHeight: 0, display: 'flex' }}>
+              <Sidebar
+                pinned={pinned}
+                sessions={sessions}
+                selectedId={selected?.id ?? ''}
+                onSelect={selectSession}
+                onOpenSettings={() => setSettingsOpen(true)}
+                mockData={mockData}
+              />
+            </div>
+          </div>
+        </motion.div>
+      )}
 
-      <div style={{ display: 'flex', flexDirection: 'row', flexGrow: 1, minHeight: 0 }}>
+      <div
+        style={{
+          flexGrow: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: C.background,
+          borderLeftWidth: !settingsOpen && sidebarOpen ? 1 : 0,
+          borderColor: C.border,
+        }}
+      >
+        <Titlebar
+          session={selected}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen((v) => !v)}
+          onNewSession={newSession}
+          rightPaneOpen={changesOpen}
+          onToggleRightPane={() => setChangesOpen((v) => !v)}
+        />
+
         {settingsOpen ? (
-          <>
+          <div style={{ display: 'flex', flexDirection: 'row', flexGrow: 1, minHeight: 0 }}>
             <SettingsNav
               section={settingsSection}
               onSection={setSettingsSection}
               onBack={() => setSettingsOpen(false)}
             />
             <SettingsView section={settingsSection} mockData={mockData} onMockData={setMockDataMode} themeId={themeId} onTheme={selectTheme} />
-          </>
+          </div>
         ) : (
-          <>
-            {/* Sidebar collapse: animate the clipping container, keep the inner
-                sidebar at its fixed width so text never reflows (GPUIX motion). */}
-            <motion.div
-              initial={false}
-              animate={{ width: sidebarOpen ? SIDEBAR_WIDTH : 0 }}
-              transition={TRANSITION}
-              style={{ height: '100%', flexShrink: 0, overflow: 'hidden' }}
-            >
-              <div style={{ width: SIDEBAR_WIDTH, height: '100%' }}>
-                <Sidebar
-                  pinned={pinned}
-                  sessions={sessions}
-                  selectedId={selected?.id ?? ''}
-                  onSelect={selectSession}
-                  onOpenSettings={() => setSettingsOpen(true)}
-                  mockData={mockData}
-                />
-              </div>
-            </motion.div>
-
+          <div style={{ display: 'flex', flexDirection: 'row', flexGrow: 1, minHeight: 0 }}>
             <ContentCard
               turns={turns}
               started={started}
@@ -170,8 +203,8 @@ export function App() {
               mockData={mockData}
             />
 
-            <ChangesPane open={changesOpen} onClose={() => setChangesOpen(false)} mockData={mockData} />
-          </>
+            <ChangesPane open={changesOpen} mockData={mockData} />
+          </div>
         )}
       </div>
     </div>
@@ -227,11 +260,9 @@ function ContentCard({
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: C.background,
-        borderLeftWidth: 1,
-        borderColor: C.border,
       }}
     >
-      {/* Transcript — the only scroller on this pane. Empty until the first
+      {/* Transcript â€” the only scroller on this pane. Empty until the first
           prompt; it fades in as the session docks. */}
       <motion.div
         initial={false}
@@ -267,8 +298,8 @@ function ContentCard({
 
       {/* Composer: one persistent absolutely-positioned surface. Its `top`
           animates from the centered hero offset down to the docked offset, and
-          its width morphs between the wide hero card and the narrower pill —
-          the hero→dock glide (motion.rs NEW_THREAD_TRANSITION). GPUIX tweens
+          its width morphs between the wide hero card and the narrower pill â€”
+          the heroâ†’dock glide (motion.rs NEW_THREAD_TRANSITION). GPUIX tweens
           numerics only, so position is driven by `top`, not flex. */}
       <motion.div
         initial={false}
