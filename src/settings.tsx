@@ -11,6 +11,7 @@
 import { useState } from 'react'
 import { motion } from '@gpuix/react'
 import { C, POPOVER_TRANSITION, SIDEBAR_WIDTH, TEXT_BODY, TEXT_MD, TEXT_SM, TEXT_XS } from './theme'
+import { THEMES } from './themes'
 import { Icon, ZeronGlyph, type IconName } from './icons'
 
 type Section = 'devices' | 'agents' | 'accounts' | 'appearance' | 'shortcuts' | 'archived'
@@ -246,18 +247,73 @@ function AgentsSection() {
 function AppearanceSection({
   mockData,
   onMockData,
+  themeId,
+  onTheme,
 }: {
   mockData: boolean
   onMockData: (enabled: boolean) => void
+  themeId: string
+  onTheme: (id: string) => void
 }) {
   return (
     <>
       <text style={{ fontSize: TEXT_SM, lineHeight: 20, color: C.textMuted }}>
+        Pick the shell theme. Zeron Dark and Dark+ are the required references; the rest are ported from Zeron's registry.
+      </text>
+      <div
+        style={{
+          marginTop: 16,
+          display: 'flex',
+          flexDirection: 'column',
+          borderWidth: 1,
+          borderColor: C.border,
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}
+      >
+        {THEMES.map((theme, index) => {
+          const active = theme.id === themeId
+          return (
+            <div
+              key={theme.id}
+              onClick={() => onTheme(theme.id)}
+              testId={`theme-${theme.id}`}
+              style={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 14,
+                paddingLeft: 16,
+                paddingRight: 16,
+                paddingTop: 12,
+                paddingBottom: 12,
+                borderTopWidth: index === 0 ? 0 : 1,
+                borderColor: C.border,
+                cursor: 'pointer',
+                backgroundColor: active ? C.selected : C.wash0,
+                hover: { backgroundColor: active ? C.selected : C.hover },
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, flexGrow: 1, minWidth: 0 }}>
+                <text style={{ fontSize: TEXT_BODY, fontWeight: active ? 600 : 500, color: active ? C.text : C.textMuted }}>
+                  {theme.name}
+                </text>
+                <text style={{ fontSize: TEXT_SM, color: C.textFaint }}>
+                  {theme.appearance === 'dark' ? 'Dark' : 'Light'}
+                </text>
+              </div>
+              {active && <Icon name="check" size={14} color={C.accent} />}
+            </div>
+          )
+        })}
+      </div>
+
+      <text style={{ fontSize: TEXT_SM, lineHeight: 20, color: C.textMuted, marginTop: 24 }}>
         Control whether the shell shows its demo fixtures or stays empty.
       </text>
       <div
         style={{
-          marginTop: 24,
+          marginTop: 12,
           display: 'flex',
           flexDirection: 'column',
           borderWidth: 1,
@@ -290,8 +346,6 @@ function AppearanceSection({
     </>
   )
 }
-
-
 function PlaceholderSection({ label }: { label: string }) {
   return (
     <text style={{ fontSize: TEXT_SM, lineHeight: 20, color: C.textMuted }}>
@@ -305,10 +359,14 @@ export function SettingsView({
   section,
   mockData,
   onMockData,
+  themeId,
+  onTheme,
 }: {
   section: Section
   mockData: boolean
   onMockData: (enabled: boolean) => void
+  themeId: string
+  onTheme: (id: string) => void
 }) {
   const active = SECTIONS.find((s) => s.id === section) ?? SECTIONS[1]
   return (
@@ -375,7 +433,7 @@ export function SettingsView({
           {section === 'agents' ? (
             <AgentsSection />
           ) : section === 'appearance' ? (
-            <AppearanceSection mockData={mockData} onMockData={onMockData} />
+            <AppearanceSection mockData={mockData} onMockData={onMockData} themeId={themeId} onTheme={onTheme} />
           ) : (
             <PlaceholderSection label={active.label} />
           )}

@@ -22,21 +22,11 @@
  * Numbers drive layout, colors are paint — the rule Zeron's theme.rs states.
  */
 
-// ── zeron_dark seeds (builtins.rs `zeron_dark()`) ───────────────────────────
-export const SEED = {
-  background: '#171717', // main panel / transcript canvas — lifted off black
-  shell: '#212123', // shell, sidebar, titlebar (the glass tint over the desktop)
-  raised: '#3d3d42', // opaque pills/chips proud of the panel
-  card: '#1b1b1d', // inline card resting on the main panel
-  text: '#e8e8ea',
-  muted: '#a9a9ae',
-  faint: '#85858a',
-  accent: '#8b7cf6',
-  danger: '#f87171',
-  warning: '#facc15',
-  success: '#34d399',
-  terminal: '#090909', // terminal palette background
-} as const
+import { DEFAULT_THEME_ID, THEMES, type ThemeSeed } from './themes'
+
+export const DEFAULT_THEME = THEMES.find((theme) => theme.id === DEFAULT_THEME_ID) ?? THEMES[0]
+/** Audit compatibility: the boot seed. Runtime theme switches mutate `C` below. */
+export const SEED = DEFAULT_THEME
 
 // ── Color math (crates/theme/src/lib.rs `Color`) ────────────────────────────
 // mix() lerps in sRGB per channel and rounds half away from zero; withAlpha()
@@ -107,111 +97,115 @@ export function hairline(alpha: number): string {
 }
 
 // ── Resolved tokens ─────────────────────────────────────────────────────────
-// Every value is either a seed or a derivation `builtins.rs variant()` /
-// `ui/src/theme.rs from_variant()` performs; none is hand-tuned. The hex after
-// each one is what `bun run audit` recomputes.
-export const C = {
-  // Surfaces
-  background: SEED.background, // #060606 — main panel, transcript canvas
-  shell: SEED.shell, // #0d0d0d — shell/sidebar/titlebar
-  raised: SEED.raised, // #343438 — opaque pill/chip
-  card: SEED.card, // #0e0e0e — inline card
-  dialog: mix(SEED.card, SEED.raised, 0.18), // #151516 — modal
-  overlay: mix(SEED.card, SEED.raised, 0.34), // #1b1b1c — popover/menu, top plane
-  terminalBg: SEED.terminal, // #090909
+// ── Resolved tokens ─────────────────────────────────────────────────────────
+// resolveTheme mirrors builtins.rs `variant()` + ui/theme.rs `from_variant()`:
+// seeds stay exact, state washes/borders derive from appearance, and `applyTheme`
+// mutates the exported objects so every render reads the active theme.
+function resolveTheme(seed: ThemeSeed) {
+  const dark = seed.appearance === 'dark'
+  const ink = dark ? '#ffffff' : '#000000'
+  const washBase = dark ? '#ebebeb' : '#3f3f46'
+  const stateWash = (alpha: number) => withAlpha(washBase, alpha)
+  const line = (alpha: number) => withAlpha(ink, alpha)
+  const solid = dark ? '#ebebef' : '#232328'
+  const syntax = seed.syntax
 
-  // State fills
-  hover: withAlpha('#ffffff', 0.11), // #ffffff1c — element_hover = glass_hover()
-  selected: wash(0.11), // #ebebeb1c — glass_selected_bg() = card_selected_bg()
-  active: withAlpha(SEED.accent, 0.18), // #8b7cf62e — element_active
-  border: hairline(0.1), // #ffffff1a
-  borderStrong: hairline(0.18), // #ffffff2e
-  ring: hairline(0.09), // #ffffff17 — inset selection ring
-  wash0: wash(0), // #ebebeb00 — transparent rest state
-  band: withAlpha('#ffffff', 0.11), // #ffffff1c — theme.band
-  input: withAlpha(SEED.raised, 0.72), // #343438b8 — colors.input
-  scrim: '#00000099', // scrim(SCRIM_ALPHA_DARK) — 60% black backdrop
+  return {
+    // Surfaces
+    background: seed.background,
+    shell: seed.shell,
+    raised: seed.raised,
+    card: seed.card,
+    dialog: mix(seed.card, seed.raised, dark ? 0.18 : 0.04),
+    overlay: mix(seed.card, seed.raised, dark ? 0.34 : 0.02),
+    terminalBg: seed.terminal,
 
-  // Text
-  text: SEED.text, // #e8e8ea — ~17.5:1 on its own plane
-  textMuted: SEED.muted, // #a9a9ae
-  textFaint: SEED.faint, // #85858a
-  textDim: SEED.muted, // #a9a9ae — from_variant maps text_dim onto text_muted
-  textBody: withAlpha(SEED.text, 0.8), // #e8e8eacc — session-row title at rest
-  textArchived: withAlpha(SEED.text, 0.55), // #e8e8ea8c — archived row title
-  subline: withAlpha(SEED.muted, 0.5), // #a9a9ae80 — space/branch/corner lines
-  harnessTint: withAlpha(SEED.muted, 0.8), // #a9a9aecc — harness mark on the surface
+    // State fills
+    hover: line(dark ? 0.11 : 0.06),
+    selected: stateWash(dark ? 0.11 : 0.06),
+    active: withAlpha(seed.accent, dark ? 0.18 : 0.1),
+    border: line(dark ? 0.1 : 0.12),
+    borderStrong: line(dark ? 0.18 : 0.22),
+    ring: line(dark ? 0.09 : 0.1),
+    wash0: stateWash(0),
+    band: line(dark ? 0.11 : 0.06),
+    input: dark ? withAlpha(seed.raised, 0.72) : seed.card,
+    scrim: dark ? '#00000099' : '#00000066',
 
-  // Accent — AccentRoles::derive(#8b7cf6, dark, #060606)
-  accent: SEED.accent, // #8b7cf6
-  accentStrong: SEED.accent, // #8b7cf6 (black beats 4.5:1 on it, so no shift)
-  accentWash: withAlpha(SEED.accent, 0.22), // #8b7cf638
-  onAccent: '#000000', // best_on_color(#8b7cf6)
-  selection: withAlpha(SEED.accent, 0.35), // #8b7cf659 — text selection
-  caret: SEED.accent,
-  glyphLight: mix(SEED.accent, '#ffffff', 0.28), // #aba1f9
-  glyphMid: SEED.accent, // #8b7cf6
-  glyphDeep: mix(SEED.accent, '#000000', 0.18), // #7266ca
-  codeText: SEED.accent,
-  codeWash: withAlpha(SEED.accent, 0.22), // #8b7cf638 — inline-code chip
+    // Text
+    text: seed.text,
+    textMuted: seed.muted,
+    textFaint: seed.faint,
+    textDim: seed.muted,
+    textBody: withAlpha(seed.text, 0.8),
+    textArchived: withAlpha(seed.text, 0.55),
+    subline: withAlpha(seed.muted, 0.5),
+    harnessTint: withAlpha(seed.muted, 0.8),
 
-  // Status
-  danger: SEED.danger, // #f87171
-  dangerMuted: mix(SEED.danger, SEED.text, 0.28), // #f49293
-  dangerStrong: SEED.danger,
-  warning: SEED.warning, // #facc15
-  warningMuted: mix(SEED.warning, SEED.text, 0.25), // #f6d34a
-  success: SEED.success, // #34d399
-  successMuted: mix(SEED.success, SEED.text, 0.25), // #61d8ad
-  solid: '#ebebef', // max-contrast plate (primary buttons)
-  onSolid: '#000000', // best_on_color(solid)
-  cursor: withAlpha(SEED.text, 0.4), // #e8e8ea66 — terminal block cursor
-  diffAdd: SEED.success,
-  diffDel: SEED.danger,
-  diffHunk: withAlpha(SEED.accent, 0.08), // #8b7cf614
+    // Accent
+    accent: seed.accent,
+    accentStrong: seed.accent,
+    accentWash: withAlpha(seed.accent, dark ? 0.22 : 0.12),
+    onAccent: dark ? '#000000' : '#ffffff',
+    selection: withAlpha(seed.accent, dark ? 0.35 : 0.24),
+    caret: seed.accent,
+    glyphLight: mix(seed.accent, dark ? '#ffffff' : seed.background, dark ? 0.28 : 0.18),
+    glyphMid: seed.accent,
+    glyphDeep: mix(seed.accent, '#000000', dark ? 0.18 : 0.26),
+    codeText: seed.accent,
+    codeWash: withAlpha(seed.accent, dark ? 0.22 : 0.12),
 
-  // Composer
-  pill: '#00000026', // composer_sidebar_tint() resolves to black @ 15%
-  pillBorder: '#bdc7d117', // hsla(210 18% 78% / 0.09) — the frost pill hairline
+    // Status
+    danger: seed.danger,
+    dangerMuted: mix(seed.danger, seed.text, 0.28),
+    dangerStrong: seed.danger,
+    warning: seed.warning,
+    warningMuted: mix(seed.warning, seed.text, 0.25),
+    success: seed.success,
+    successMuted: mix(seed.success, seed.text, 0.25),
+    solid,
+    onSolid: dark ? '#000000' : '#ffffff',
+    cursor: withAlpha(seed.text, dark ? 0.4 : 0.55),
+    diffAdd: seed.success,
+    diffDel: seed.danger,
+    diffHunk: withAlpha(seed.accent, dark ? 0.08 : 0.07),
 
-  // Transcript
-  bubble: wash(0.08), // #ebebeb14 — user_bubble_bg()
+    // Composer
+    pill: dark ? withAlpha('#000000', 0.15) : seed.card,
+    pillBorder: dark ? '#bdc7d117' : line(0.12),
 
-  // Syntax (the zeron_dark syntax array, builtins.rs)
-  syntaxComment: '#92929a',
-  syntaxKeyword: '#8b7cf6',
-  syntaxString: '#34d399',
-  syntaxNumber: '#facc15',
-  syntaxType: '#c084fc',
-  syntaxFunction: '#60a5fa',
-  syntaxProperty: '#f472b6',
-  syntaxVariable: '#e8e8ea',
-  syntaxPunctuation: '#a1a1aa',
-  syntaxTag: '#f472b6',
-  syntaxAttribute: '#22d3ee',
-  syntaxInvalid: '#f87171',
+    // Transcript
+    bubble: stateWash(dark ? 0.08 : 0.04),
+
+    // Syntax
+    syntaxComment: syntax[0],
+    syntaxKeyword: syntax[1],
+    syntaxString: syntax[2],
+    syntaxNumber: syntax[3],
+    syntaxType: syntax[4],
+    syntaxFunction: syntax[5],
+    syntaxProperty: syntax[6],
+    syntaxVariable: syntax[7],
+    syntaxPunctuation: syntax[8],
+    syntaxTag: syntax[9],
+    syntaxAttribute: syntax[10],
+    syntaxInvalid: syntax[11],
+  }
 }
 
-/** ANSI_DARK — the zeron_dark terminal palette (builtins.rs). */
-export const ANSI = [
-  '#242424',
-  '#f87171',
-  '#4ade80',
-  '#facc15',
-  '#60a5fa',
-  '#c084fc',
-  '#22d3ee',
-  '#d4d4d8',
-  '#52525b',
-  '#fca5a5',
-  '#86efac',
-  '#fde047',
-  '#93c5fd',
-  '#d8b4fe',
-  '#67e8f9',
-  '#fafafa',
-] as const
+export const C = resolveTheme(DEFAULT_THEME)
+export const ANSI: string[] = [...DEFAULT_THEME.ansi]
 
+export function themeById(id: string): ThemeSeed {
+  return THEMES.find((theme) => theme.id === id) ?? DEFAULT_THEME
+}
+
+export function applyTheme(id: string): ThemeSeed {
+  const seed = themeById(id)
+  Object.assign(C, resolveTheme(seed))
+  ANSI.splice(0, ANSI.length, ...seed.ansi)
+  return seed
+}
 // ── Metrics (crates/ui/src/theme.rs, shell.rs, composer.rs) ─────────────────
 // The spacing ladder.
 export const SPACE_XS = 4

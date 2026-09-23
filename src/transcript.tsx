@@ -26,27 +26,29 @@ import {
 import { Icon } from './icons'
 import type { Turn } from './data'
 
-/** The markdown renderer's theme — Zeron's MD_* metrics + code tokens. */
-const MD_THEME = {
-  text: C.text,
-  textMuted: C.textMuted,
-  textFaint: C.textFaint,
-  textDim: C.textDim,
-  border: C.border,
-  bg: C.background,
-  accent: C.accent,
-  caret: C.accent,
-  codeText: C.codeText,
-  codeWash: C.codeWash,
-  metrics: {
-    mdTextSize: MD_TEXT_SIZE,
-    mdLineHeight: MD_LINE_HEIGHT,
-    mdBlockGap: MD_BLOCK_GAP,
-    mdHeadingSizes: MD_HEADING_SIZES,
-    mdHeadingLineHeights: MD_HEADING_LINE_HEIGHTS,
-    codeTextSize: MD_CODE_TEXT_SIZE,
-    codeLineHeight: MD_CODE_LINE_HEIGHT,
-  },
+/** The markdown renderer's theme — computed per render so theme switches apply. */
+function mdTheme() {
+  return {
+    text: C.text,
+    textMuted: C.textMuted,
+    textFaint: C.textFaint,
+    textDim: C.textDim,
+    border: C.border,
+    bg: C.background,
+    accent: C.accent,
+    caret: C.accent,
+    codeText: C.codeText,
+    codeWash: C.codeWash,
+    metrics: {
+      mdTextSize: MD_TEXT_SIZE,
+      mdLineHeight: MD_LINE_HEIGHT,
+      mdBlockGap: MD_BLOCK_GAP,
+      mdHeadingSizes: MD_HEADING_SIZES,
+      mdHeadingLineHeights: MD_HEADING_LINE_HEIGHTS,
+      codeTextSize: MD_CODE_TEXT_SIZE,
+      codeLineHeight: MD_CODE_LINE_HEIGHT,
+    },
+  }
 }
 
 /** The timestamp + copy footer under an assistant turn. */
@@ -240,7 +242,7 @@ export function TurnRow({ turn }: { turn: Turn }) {
   if (turn.role === 'user') return <UserTurn turn={turn} />
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <markdown source={turn.text} theme={MD_THEME} />
+      <markdown source={turn.text} theme={mdTheme()} />
       <AssistantFooter at={turn.at ?? 'Sep 6, 5:22 PM'} />
     </div>
   )

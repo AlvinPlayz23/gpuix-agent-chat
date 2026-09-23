@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, render, useWindowSize } from '@gpuix/react'
 import {
   C,
+  applyTheme,
   COMPOSER_DOCK_HEIGHT,
   COMPOSER_HERO_HEIGHT,
   NEW_THREAD_TRANSITION,
@@ -10,6 +11,7 @@ import {
   TITLEBAR_HEIGHT,
   TRANSITION,
 } from './src/theme'
+import { DEFAULT_THEME_ID } from './src/themes'
 import { Sidebar } from './src/sidebar'
 import { Titlebar } from './src/titlebar'
 import { Composer, HeroTargetSelectors } from './src/composer'
@@ -41,6 +43,12 @@ export function App() {
   // Appearance → Mock data: on keeps the screenshot fixtures; off clears every
   // fake session/title/transcript/diff and leaves only the empty shell.
   const [mockData, setMockData] = useState(true)
+  const [themeId, setThemeId] = useState(DEFAULT_THEME_ID)
+
+  const selectTheme = (id: string) => {
+    applyTheme(id)
+    setThemeId(id)
+  }
 
   const pinned = mockData ? PINNED : []
   const sessions = mockData ? SESSIONS : []
@@ -120,7 +128,7 @@ export function App() {
               onSection={setSettingsSection}
               onBack={() => setSettingsOpen(false)}
             />
-            <SettingsView section={settingsSection} mockData={mockData} onMockData={setMockDataMode} />
+            <SettingsView section={settingsSection} mockData={mockData} onMockData={setMockDataMode} themeId={themeId} onTheme={selectTheme} />
           </>
         ) : (
           <>

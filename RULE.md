@@ -36,21 +36,13 @@ Rule from Zeron: **numbers drive layout, colors are paint.**
 4. For "connected"/"seamless" requests, remove hairlines and match backgrounds across the boundary. For "match home", use `C.background`. For "part of sidebar", use `C.shell`.
 5. After palette changes, remember `bun run audit` is pinned to Zeron's old reference pixels. Intentional visual divergence will make audit fail; do not run it as validation unless the user wants audit updated too.
 
-## 4. Current color direction
+## 4. Theme system
 
-The user prefers the newer greyish Zeron over the old black Zeron ramp.
+Themes live in `src/themes.ts` (seeds ported from `../zeron/crates/theme/src/builtins.rs`). `src/theme.ts` resolves the active seed into `C`/`ANSI`; `applyTheme(id)` mutates those exports before React state flips, so function components re-render with the new values. Avoid module-level captures of `C` � compute per render (see `transcript.tsx` `mdTheme()`).
 
-Current local ramp in `src/theme.ts`:
+Boot default is Dark+ (`vscode-dark-plus`). Required references are included: Zeron Dark (upstream default) and Dark+. Current set is 5 dark + 5 light: Zeron Dark/Light, Dark+/Light+, Catppuccin Mocha/Latte, Tokyo Night/Light, GitHub Dark/Light.
 
-- background: `#171717`
-- shell/sidebar: `#212123`
-- card: `#1b1b1d`
-- raised/composer/chips: `#3d3d42`
-
-If matching the lighter screenshot more closely, raised/composer may be nudged down toward `#2f2f33`; confirm before broad token changes.
-
-Semantic hue names from Zeron stay meaningful: indigo/Zeron accent, red danger, amber warning, emerald success, plus project monograms slate/blue/violet/rose/amber/emerald/teal/orange.
-
+Semantic hue names stay meaningful: indigo/Zeron accent, red danger, amber warning, emerald success, plus project monograms slate/blue/violet/rose/amber/emerald/teal/orange.
 ## 5. Mock / no-mock mode
 
 There is an App-level `mockData` state surfaced at Settings → Appearance → **Mock data**.
